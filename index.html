@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jacquard Universal Converter — Multi-Brand</title>
+<title>Jacquard Universal Converter — AI Edition v5.0</title>
 <style>
   :root {
     --bg: #0a0e17; --panel: #111827; --border: #1f2937;
@@ -27,10 +27,12 @@
     font-size: 18px; font-weight: 700;
     background: linear-gradient(90deg, var(--accent), var(--accent2));
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   .header .badge {
     font-size: 10px; padding: 3px 10px; border-radius: 20px;
-    background: var(--accent); color: #000; font-weight: 700;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: #fff; font-weight: 700;
   }
   .tabs {
     display: flex; gap: 6px; padding: 12px 24px; background: var(--panel);
@@ -76,6 +78,7 @@
     outline: none; border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(6,182,212,.15);
   }
+  textarea { resize: vertical; min-height: 80px; }
   button {
     padding: 10px 20px; border-radius: 9px; border: none;
     background: linear-gradient(135deg, var(--accent), #0891b2);
@@ -133,6 +136,7 @@
   .status.info { background: rgba(6,182,212,.1); color: #67e8f9; border-color: var(--accent); }
   .status.warn { background: rgba(245,158,11,.1); color: #fcd34d; border-color: var(--warn); }
   .help { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.6; }
+  .help a { color: #67e8f9; }
   .import-box {
     border: 2px dashed #374151; border-radius: 14px; padding: 26px;
     text-align: center; background: #0a0e17; cursor: pointer;
@@ -167,12 +171,6 @@
   .tag.JC5 { background: #ea580c; }
   .tag.CFG { background: #0891b2; }
   .tag.BMP { background: #16a34a; }
-  .hex-box {
-    font-family: 'Courier New', monospace; font-size: 12px;
-    background: #000; color: #0f0; padding: 12px; border-radius: 8px;
-    border: 1px solid #1f2937; margin-top: 10px; max-height: 200px;
-    overflow: auto; line-height: 1.6; white-space: pre;
-  }
   @media (max-width: 640px) {
     .grid-2, .grid-3 { grid-template-columns: 1fr; }
     .container { padding: 12px; }
@@ -186,13 +184,14 @@
 
 <div class="header">
   <h1>🧵 Jacquard Universal Converter</h1>
-  <span class="badge">Multi-Brand v4.0</span>
+  <span class="badge">AI Edition v5.0</span>
 </div>
 
 <div class="tabs">
-  <button class="tab active" data-tab="setups">⚙️ Machine Setups</button>
-  <button class="tab" data-tab="design">🎨 Design Editor</button>
-  <button class="tab" data-tab="convert">🚀 Convert & Download</button>
+  <button class="tab active" data-tab="setups">⚙️ Setups</button>
+  <button class="tab" data-tab="design">🎨 Design</button>
+  <button class="tab" data-tab="convert">🚀 Convert</button>
+  <button class="tab" data-tab="ai">🤖 AI Design</button>
   <button class="tab" data-tab="help">❓ Help</button>
 </div>
 
@@ -403,15 +402,90 @@
   </div>
 </div>
 
+<!-- ===================== AI TAB ===================== -->
+<div id="tab-ai" class="tab-content hidden">
+
+  <div class="panel">
+    <h2>🔑 Gemini API Key Setup (Ek Baar)</h2>
+    <p class="help">
+      Free API key lo:
+      <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a>
+      → "Create API Key" → copy → yahan paste karo
+    </p>
+
+    <label>Gemini API Key</label>
+    <input type="password" id="geminiKey" placeholder="AIza...">
+    <div class="btn-row">
+      <button class="success" onclick="saveGeminiKey()">💾 Save Key</button>
+      <button class="secondary" onclick="testGeminiKey()">🔍 Test Key</button>
+    </div>
+    <div id="keyStatus"></div>
+  </div>
+
+  <div class="panel">
+    <h2>📸 AI Design Analysis — Photo Se Details Nikalo</h2>
+    <p class="help">
+      Apni <b>fabric ya design ki photo</b> daalo. AI batayega pattern type, repeat, hooks, picks, structure.
+    </p>
+
+    <div class="import-box" onclick="document.getElementById('aiImageInput').click()">
+      <div class="icon">🖼️</div>
+      <div class="title">Design Photo Upload</div>
+      <div class="subtitle">Click karo — JPG / PNG / BMP</div>
+    </div>
+    <input type="file" id="aiImageInput" accept="image/*" class="hidden" onchange="handleAIImage(event)">
+
+    <div id="aiPreview" style="margin-top:12px;"></div>
+
+    <label>Additional Instructions (Optional)</label>
+    <input type="text" id="aiPrompt" placeholder="e.g. Yeh design Surat jaali hai, iske hooks batao">
+
+    <div class="btn-row">
+      <button class="purple" id="aiAnalyzeBtn" onclick="analyzeDesignWithAI()" disabled>
+        🤖 AI Se Analyze Karo
+      </button>
+      <button class="secondary" onclick="clearAIAnalysis()">Clear</button>
+    </div>
+
+    <div id="aiResult"></div>
+  </div>
+
+  <div class="panel">
+    <h2>✍️ AI Se Naya Design Banao (Text Prompt)</h2>
+    <p class="help">
+      Text likho, AI design bana dega, canvas mein load ho jayega.
+    </p>
+
+    <label>Design Description</label>
+    <input type="text" id="aiGenPrompt"
+           placeholder="e.g. floral jaali pattern, symmetric, black white">
+
+    <div class="btn-row">
+      <button class="purple" onclick="generateDesignWithAI()">✨ Design Banao</button>
+    </div>
+
+    <div id="aiGenResult"></div>
+  </div>
+
+  <div class="panel">
+    <h2>📋 Saved AI Analyses</h2>
+    <div id="aiHistory"></div>
+    <div class="btn-row">
+      <button class="secondary" onclick="clearAIHistory()">🗑️ History Clear</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== HELP TAB ===================== -->
 <div id="tab-help" class="tab-content hidden">
   <div class="panel">
     <h2>❓ Kaise Use Karein</h2>
     <ol style="line-height:2.2;padding-left:20px;color:#cbd5e1;font-size:13px;">
-      <li><b>Setups tab</b> → Running file upload karo → Auto-fill hoga → Naam do → <b>Save</b></li>
+      <li><b>Setups tab</b> → Running file upload karo → Auto-fill → Naam do → <b>Save</b></li>
       <li><b>Design tab</b> → Naya design banao ya BMP/PNG upload karo</li>
+      <li><b>AI tab</b> → API key save karo → Photo upload → AI analyze → Hooks/picks apply</li>
       <li><b>Convert tab</b> → Saved setup select karo → Picks set karo → <b>Convert</b></li>
-      <li>File download ho jayegi → USB mein daalo → Machine mein run karo</li>
+      <li>File download → USB mein daalo → Machine mein run karo</li>
     </ol>
   </div>
   <div class="panel">
@@ -422,6 +496,14 @@
       • <b>Hooks</b> = Warp threads (columns)<br>
       • <b>Picks</b> = Weft insertions (rows)<br>
       • <b>Skip Hooks</b> = Jo hooks machine mein use nahi hote
+    </p>
+  </div>
+  <div class="panel">
+    <h2>🤖 AI Features</h2>
+    <p class="help">
+      • <b>Gemini API</b> = Design photo se details nikalna<br>
+      • <b>Pollinations.ai</b> = Text se design banana (free, no key)<br>
+      • Har jacquard ka size alag hota hai — AI ko extra prompt mein bata sakte ho
     </p>
   </div>
   <div class="panel">
@@ -437,17 +519,20 @@
 
 <script>
 /* ============================================================
-   JACQUARD UNIVERSAL CONVERTER v4.0
-   Multi-Brand: EP (Bonas/TIANMAI) · JC5 (Stäubli) · CFG · BMP
+   JACQUARD UNIVERSAL CONVERTER v5.0
+   Multi-Brand + AI (Gemini + Pollinations)
    ============================================================ */
 
-const LS_SETUPS = 'jacquard_setups_v4';
-const LS_DESIGN = 'jacquard_design_v4';
+const LS_SETUPS = 'jacquard_setups_v5';
+const LS_DESIGN = 'jacquard_design_v5';
+const LS_GEMINI_KEY = 'jacquard_gemini_key_v1';
+const LS_AI_HISTORY = 'jacquard_ai_history_v1';
 
 let brushColor = 1, isDrawing = false;
 let convertSource = 'canvas';
 let convertImageData = null;
 let parsedRunningFile = null;
+let currentAIImage = null;
 
 /* ---------- TABS ---------- */
 document.querySelectorAll('.tab').forEach(tab => {
@@ -458,6 +543,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById('tab-' + tab.dataset.tab).classList.remove('hidden');
     if (tab.dataset.tab === 'convert') refreshConvertDropdown();
     if (tab.dataset.tab === 'design') initCanvas();
+    if (tab.dataset.tab === 'ai') initAITab();
   });
 });
 function gotoConvert() { document.querySelector('.tab[data-tab="convert"]').click(); }
@@ -621,14 +707,12 @@ function handleRunningFile(ev) {
   reader.readAsArrayBuffer(file);
 }
 
-/* ---- EP Parser (Bonas + TIANMAI compatible) ---- */
 function parseEP(buffer, file) {
   const dv = new DataView(buffer);
   const totalBytes = buffer.byteLength;
   const fileBase = file.name.replace(/\.ep$/i, '');
   const nameMatch = fileBase.match(/^(\d+)\s*[A-Z]\s*(\d+)$/i);
 
-  // Try multiple header patterns
   const candidates = [
     { hooks: dv.getUint16(0x20, true), picks: dv.getUint16(0x03, true), offset: 0x22, fmt: 'Bonas/Standard' },
     { hooks: dv.getUint16(0x10, true), picks: dv.getUint16(0x12, true), offset: 0x20, fmt: 'Chinese-0x10' },
@@ -657,7 +741,6 @@ function parseEP(buffer, file) {
   };
 }
 
-/* ---- JC5 Parser (Stäubli) ---- */
 function parseJC5(buffer, file) {
   const dv = new DataView(buffer);
   const magic = String.fromCharCode(buffer[0], buffer[1], buffer[2]);
@@ -674,7 +757,6 @@ function parseJC5(buffer, file) {
   };
 }
 
-/* ---- CFG Parser (DesignView/PLC) ---- */
 function parseCFG(buffer, file) {
   const bytes = new Uint8Array(buffer.slice(0, Math.min(300, buffer.byteLength)));
   let header = '';
@@ -714,7 +796,6 @@ function parseImageAsRunning(file) {
   });
 }
 
-/* ---- HEX INPUT PARSER ---- */
 function parseHexInput() {
   const raw = document.getElementById('hexInput').value.trim();
   if (!raw) return;
@@ -775,7 +856,7 @@ function showParsedInfo(p) {
 }
 
 /* ============================================================
-   SETUPS (localStorage)
+   SETUPS
    ============================================================ */
 
 function getSetups() { try { return JSON.parse(localStorage.getItem(LS_SETUPS) || '[]'); } catch { return []; } }
@@ -1005,22 +1086,21 @@ function showPreview(grid) {
 }
 
 /* ============================================================
-   FILE GENERATORS — MULTI-BRAND
+   FILE GENERATORS
    ============================================================ */
 
-/* ---- EP Generator (Bonas / TIANMAI compatible) ---- */
 function generateEP(grid, setup) {
   const h = grid.length, w = grid[0].length;
-  const headerSize = 34; // 0x22
+  const headerSize = 34;
   const bytesPerRow = Math.ceil(w / 8);
   const buf = new Uint8Array(headerSize + bytesPerRow * h);
   const dv = new DataView(buf.buffer);
 
-  dv.setUint16(0, 0x0001, true);       // version
-  dv.setUint16(3, h, true);            // total picks
+  dv.setUint16(0, 0x0001, true);
+  dv.setUint16(3, h, true);
   const fname = (setup.name || 'design').slice(0, 14);
   for (let i = 0; i < 14; i++) buf[6 + i] = i < fname.length ? fname.charCodeAt(i) : 0;
-  dv.setUint16(0x20, w, true);         // total hooks
+  dv.setUint16(0x20, w, true);
 
   let off = headerSize;
   for (let y = 0; y < h; y++) {
@@ -1028,7 +1108,7 @@ function generateEP(grid, setup) {
       let byte = 0;
       for (let bit = 0; bit < 8; bit++) {
         const x = b * 8 + bit;
-        if (x < w && grid[y][x]) byte |= (1 << bit); // LSB first
+        if (x < w && grid[y][x]) byte |= (1 << bit);
       }
       buf[off++] = byte;
     }
@@ -1036,7 +1116,6 @@ function generateEP(grid, setup) {
   return new Blob([buf], {type: 'application/octet-stream'});
 }
 
-/* ---- JC5 Generator (Stäubli) ---- */
 function generateJC5(grid, setup) {
   const h = grid.length, w = grid[0].length;
   const headerSize = 12;
@@ -1044,7 +1123,7 @@ function generateJC5(grid, setup) {
   const buf = new Uint8Array(headerSize + bytesPerRow * h);
   const dv = new DataView(buf.buffer);
 
-  buf[0] = 0x4A; buf[1] = 0x43; buf[2] = 0x35; buf[3] = 0x00; // "JC5\0"
+  buf[0] = 0x4A; buf[1] = 0x43; buf[2] = 0x35; buf[3] = 0x00;
   dv.setUint16(4, w, true);
   dv.setUint16(6, h, true);
 
@@ -1079,9 +1158,394 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+/* ============================================================
+   AI TAB — GEMINI + POLLINATIONS
+   ============================================================ */
+
+function saveGeminiKey() {
+  const key = document.getElementById('geminiKey').value.trim();
+  if (!key || !key.startsWith('AIza')) {
+    return setKeyStatus('err', '❌ Valid key nahi lagti (AIza se start honi chahiye)');
+  }
+  localStorage.setItem(LS_GEMINI_KEY, key);
+  setKeyStatus('ok', '✅ Key saved! Ab AI features use kar sakta hai.');
+}
+
+function getGeminiKey() {
+  return localStorage.getItem(LS_GEMINI_KEY) || '';
+}
+
+function setKeyStatus(t, m) {
+  document.getElementById('keyStatus').innerHTML = `<div class="status ${t}">${m}</div>`;
+  setTimeout(() => {
+    const el = document.getElementById('keyStatus');
+    if (el) el.innerHTML = '';
+  }, 4000);
+}
+
+async function testGeminiKey() {
+  const key = getGeminiKey();
+  if (!key) return setKeyStatus('err', '❌ Pehle key save karo');
+  setKeyStatus('info', '⏳ Testing...');
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'Reply only with word OK' }] }]
+        })
+      }
+    );
+    if (!res.ok) throw new Error('API error: ' + res.status);
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (text.toLowerCase().includes('ok')) {
+      setKeyStatus('ok', '✅ Key working perfectly!');
+    } else {
+      setKeyStatus('warn', '⚠️ Key kaam kar rahi hai lekin response ajeeb hai');
+    }
+  } catch (err) {
+    setKeyStatus('err', '❌ ' + err.message);
+  }
+}
+
+function handleAIImage(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+
+  if (file.size > 4 * 1024 * 1024) {
+    alert('Image 4MB se badi hai. Chhoti kar ke upload karo.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    const base64 = dataUrl.split(',')[1];
+    const mimeType = dataUrl.split(';')[0].split(':')[1];
+
+    currentAIImage = { base64, mimeType, name: file.name };
+
+    document.getElementById('aiPreview').innerHTML = `
+      <div style="display:flex;gap:12px;align-items:center;padding:10px;background:#0a0e17;border-radius:10px;border:1px solid #1f2937;">
+        <img src="${dataUrl}" style="max-width:80px;max-height:80px;border-radius:6px;image-rendering:pixelated;">
+        <div style="font-size:12px;color:#9ca3af;">
+          <div style="color:#38bdf8;font-weight:600;">${esc(file.name)}</div>
+          <div>${(file.size/1024).toFixed(1)} KB · ${mimeType}</div>
+        </div>
+      </div>`;
+    document.getElementById('aiAnalyzeBtn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analyzeDesignWithAI() {
+  const key = getGeminiKey();
+  if (!key) {
+    document.getElementById('aiResult').innerHTML =
+      `<div class="status err">❌ Pehle Gemini API key save karo (upar section mein)</div>`;
+    return;
+  }
+  if (!currentAIImage) {
+    document.getElementById('aiResult').innerHTML =
+      `<div class="status err">❌ Pehle design ki photo upload karo</div>`;
+    return;
+  }
+
+  const extraPrompt = document.getElementById('aiPrompt').value.trim();
+
+  document.getElementById('aiResult').innerHTML =
+    `<div class="status info">⏳ AI analyze kar raha hai... (10-20 seconds)</div>`;
+  document.getElementById('aiAnalyzeBtn').disabled = true;
+
+  const prompt = `You are an expert jacquard textile designer and analyst. Analyze this fabric/design image carefully.
+
+Extract:
+1. Pattern Type (jaali, floral, geometric, damask, diamond, plain, twill)
+2. Pattern Category (traditional/modern/abstract)
+3. Color Count
+4. Repeat Detection - estimate pattern repeat size in pixels
+5. Symmetry (horizontal/vertical/diagonal/none)
+6. Estimated Hooks (672, 1344, 2688 etc.)
+7. Estimated Picks (weft rows for one repeat)
+8. Thread Density (loose/medium/dense)
+9. Weave Structure Suggestions
+10. Design Description in 2-3 lines
+11. Harness Plan Suggestions (hooks to skip/merge)
+12. Difficulty Level (easy/medium/hard)
+
+${extraPrompt ? 'User context: ' + extraPrompt : ''}
+
+Respond in Hinglish (Hindi + English mix) in this EXACT format:
+
+**PATTERN TYPE:** [type]
+**CATEGORY:** [category]
+**COLORS:** [count]
+**REPEAT SIZE:** [W × H pixels]
+**SYMMETRY:** [type]
+**ESTIMATED HOOKS:** [number]
+**ESTIMATED PICKS:** [number]
+**THREAD DENSITY:** [level]
+**WEAVE STRUCTURE:** [suggestion]
+**DIFFICULTY:** [level]
+
+**DESCRIPTION:**
+[2-3 lines Hinglish mein]
+
+**HARNESS PLAN TIPS:**
+[2-3 bullet points]
+
+**NOTES:**
+[Any special thing]`;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              { inline_data: { mime_type: currentAIImage.mimeType, data: currentAIImage.base64 } }
+            ]
+          }]
+        })
+      }
+    );
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error('API ' + res.status + ': ' + errText.substring(0, 150));
+    }
+
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Koi response nahi mila';
+
+    const hooksMatch = text.match(/ESTIMATED HOOKS[:\s*]+(\d+)/i);
+    const picksMatch = text.match(/ESTIMATED PICKS[:\s*]+(\d+)/i);
+
+    document.getElementById('aiResult').innerHTML = `
+      <div class="parsed-card" style="border-color:#8b5cf6;">
+        <div style="font-weight:700;color:#c4b5fd;margin-bottom:10px;">
+          🤖 AI Analysis Complete
+        </div>
+        <div style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:#e5e7eb;">${esc(text)}</div>
+        ${hooksMatch || picksMatch ? `
+          <div class="btn-row" style="margin-top:14px;">
+            ${hooksMatch ? `<button class="purple" onclick="applyAIHooks(${hooksMatch[1]})">✅ Use ${hooksMatch[1]} Hooks</button>` : ''}
+            ${picksMatch ? `<button class="purple" onclick="applyAIPicks(${picksMatch[1]})">✅ Use ${picksMatch[1]} Picks</button>` : ''}
+          </div>
+        ` : ''}
+      </div>`;
+
+    saveToAIHistory({
+      type: 'analysis',
+      imageName: currentAIImage.name,
+      result: text,
+      hooks: hooksMatch ? parseInt(hooksMatch[1]) : null,
+      picks: picksMatch ? parseInt(picksMatch[1]) : null,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('aiResult').innerHTML =
+      `<div class="status err">❌ AI Error: ${esc(err.message)}</div>`;
+  } finally {
+    document.getElementById('aiAnalyzeBtn').disabled = false;
+  }
+}
+
+function clearAIAnalysis() {
+  currentAIImage = null;
+  document.getElementById('aiPreview').innerHTML = '';
+  document.getElementById('aiResult').innerHTML = '';
+  document.getElementById('aiPrompt').value = '';
+  document.getElementById('aiImageInput').value = '';
+  document.getElementById('aiAnalyzeBtn').disabled = true;
+}
+
+function applyAIHooks(hooks) {
+  document.getElementById('totalHooks').value = hooks;
+  document.getElementById('canvasW').value = hooks;
+  alert(`✅ ${hooks} hooks set ho gaye! Ab Setups tab mein save karo.`);
+  document.querySelector('.tab[data-tab="setups"]').click();
+}
+
+function applyAIPicks(picks) {
+  document.getElementById('totalPicks').value = picks;
+  document.getElementById('canvasH').value = picks;
+  alert(`✅ ${picks} picks set ho gaye!`);
+}
+
+async function generateDesignWithAI() {
+  const prompt = document.getElementById('aiGenPrompt').value.trim();
+  if (!prompt) {
+    document.getElementById('aiGenResult').innerHTML =
+      `<div class="status err">❌ Pehle description likho</div>`;
+    return;
+  }
+
+  document.getElementById('aiGenResult').innerHTML =
+    `<div class="status info">⏳ AI design bana raha hai... (10-15 seconds)</div>`;
+
+  try {
+    const fullPrompt = `jacquard textile pattern design, ${prompt}, black and white pixels, high contrast, symmetric, seamless pattern, 2d flat view`;
+    const encoded = encodeURIComponent(fullPrompt);
+    const seed = Math.floor(Math.random() * 1000000);
+    const url = `https://image.pollinations.ai/prompt/${encoded}?width=512&height=512&seed=${seed}&nologo=true`;
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      document.getElementById('aiGenResult').innerHTML = `
+        <div class="parsed-card" style="border-color:#8b5cf6;">
+          <div style="font-weight:700;color:#c4b5fd;margin-bottom:10px;">
+            ✨ AI Design Ready
+          </div>
+          <img src="${url}" style="max-width:300px;border-radius:8px;image-rendering:pixelated;border:1px solid #1f2937;">
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="purple" onclick="loadAIDesignToCanvas('${url}')">
+              📥 Canvas Mein Load Karo
+            </button>
+            <button class="secondary" onclick="downloadAIImage('${url}')">
+              ⬇️ Download Image
+            </button>
+          </div>
+        </div>`;
+    };
+
+    img.onerror = () => {
+      document.getElementById('aiGenResult').innerHTML =
+        `<div class="status err">❌ Image generate nahi hui. Try again.</div>`;
+    };
+
+    img.src = url;
+
+  } catch (err) {
+    document.getElementById('aiGenResult').innerHTML =
+      `<div class="status err">❌ ${esc(err.message)}</div>`;
+  }
+}
+
+function loadAIDesignToCanvas(url) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const tmp = document.createElement('canvas');
+    tmp.width = img.width; tmp.height = img.height;
+    const tc = tmp.getContext('2d');
+    tc.drawImage(img, 0, 0);
+    const data = tc.getImageData(0, 0, img.width, img.height).data;
+    const grid = [];
+    for (let y = 0; y < img.height; y++) {
+      const row = [];
+      for (let x = 0; x < img.width; x++) {
+        const i = (y * img.width + x) * 4;
+        const lum = data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114;
+        row.push(lum > 128 ? 1 : 0);
+      }
+      grid.push(row);
+    }
+    canvas.width = img.width;
+    canvas.height = img.height;
+    document.getElementById('canvasW').value = img.width;
+    document.getElementById('canvasH').value = img.height;
+    canvasState = grid;
+    drawCanvas();
+    alert('✅ Design canvas mein load ho gaya! Ab Design tab pe dekho.');
+    document.querySelector('.tab[data-tab="design"]').click();
+  };
+  img.onerror = () => alert('❌ Image load nahi hui');
+  img.src = url;
+}
+
+function downloadAIImage(url) {
+  fetch(url)
+    .then(r => r.blob())
+    .then(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `ai_design_${Date.now()}.png`;
+      a.click();
+    })
+    .catch(() => alert('Download fail. Right-click → Save image as karo.'));
+}
+
+function getAIHistory() {
+  try { return JSON.parse(localStorage.getItem(LS_AI_HISTORY) || '[]'); }
+  catch { return []; }
+}
+
+function saveToAIHistory(entry) {
+  const hist = getAIHistory();
+  hist.unshift(entry);
+  if (hist.length > 20) hist.pop();
+  localStorage.setItem(LS_AI_HISTORY, JSON.stringify(hist));
+  renderAIHistory();
+}
+
+function renderAIHistory() {
+  const el = document.getElementById('aiHistory');
+  if (!el) return;
+  const hist = getAIHistory();
+  if (!hist.length) {
+    el.innerHTML = '<div class="empty">Koi AI analysis saved nahi</div>';
+    return;
+  }
+  el.innerHTML = hist.map((h, i) => `
+    <div class="setup-card" style="cursor:pointer;" onclick="showHistoryItem(${i})">
+      <div style="flex:1;">
+        <div class="name">${esc(h.imageName || 'Analysis')}</div>
+        <div class="meta">
+          ${h.hooks ? h.hooks + 'h · ' : ''}${h.picks ? h.picks + 'p · ' : ''}
+          ${new Date(h.timestamp).toLocaleString()}
+        </div>
+      </div>
+      <div style="font-size:11px;color:#8b5cf6;">View →</div>
+    </div>
+  `).join('');
+}
+
+function showHistoryItem(idx) {
+  const hist = getAIHistory();
+  const h = hist[idx];
+  if (!h) return;
+  document.getElementById('aiResult').innerHTML = `
+    <div class="parsed-card" style="border-color:#8b5cf6;">
+      <div style="font-weight:700;color:#c4b5fd;margin-bottom:10px;">
+        📋 Saved Analysis — ${esc(h.imageName || 'Unknown')}
+      </div>
+      <div style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:#e5e7eb;">${esc(h.result)}</div>
+    </div>`;
+}
+
+function clearAIHistory() {
+  if (!confirm('Saari AI history delete karni hai?')) return;
+  localStorage.removeItem(LS_AI_HISTORY);
+  renderAIHistory();
+}
+
+function initAITab() {
+  const saved = getGeminiKey();
+  if (saved) {
+    document.getElementById('geminiKey').value = saved;
+    setKeyStatus('ok', '✅ Saved key mil gayi. Ready to use!');
+  }
+  renderAIHistory();
+}
+
 /* ---------- INIT ---------- */
 window.addEventListener('load', () => {
-  renderSetups(); initCanvas(); refreshConvertDropdown();
+  renderSetups();
+  initCanvas();
+  refreshConvertDropdown();
+  initAITab();
 });
 </script>
 </body>
