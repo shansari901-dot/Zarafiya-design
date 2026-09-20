@@ -3,295 +3,453 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jacquard Converter v3.0 — TIANMAI</title>
+<title>Jacquard Universal Converter — Multi-Brand</title>
 <style>
+  :root {
+    --bg: #0a0e17; --panel: #111827; --border: #1f2937;
+    --text: #e5e7eb; --muted: #9ca3af; --accent: #06b6d4;
+    --accent2: #8b5cf6; --success: #10b981; --danger: #ef4444;
+    --warn: #f59e0b;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-  header { background: #1e293b; padding: 14px 20px; border-bottom: 2px solid #334155; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-  header h1 { font-size: 18px; color: #38bdf8; }
-  header .ver { font-size: 11px; color: #64748b; }
-  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #1e293b; border-bottom: 1px solid #334155; overflow-x: auto; }
-  .tab { padding: 9px 16px; border-radius: 8px; background: #334155; color: #cbd5e1; font-size: 13px; font-weight: 500; border: none; cursor: pointer; white-space: nowrap; font-family: inherit; }
-  .tab.active { background: #0ea5e9; color: #fff; }
-  .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
-  .panel { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 16px; }
-  .panel h2 { font-size: 16px; margin-bottom: 14px; color: #38bdf8; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    font-size: 14px; line-height: 1.5;
+  }
+  .header {
+    background: linear-gradient(135deg, #111827 0%, #1e293b 100%);
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 8px;
+  }
+  .header h1 {
+    font-size: 18px; font-weight: 700;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .header .badge {
+    font-size: 10px; padding: 3px 10px; border-radius: 20px;
+    background: var(--accent); color: #000; font-weight: 700;
+  }
+  .tabs {
+    display: flex; gap: 6px; padding: 12px 24px; background: var(--panel);
+    border-bottom: 1px solid var(--border); overflow-x: auto;
+  }
+  .tab {
+    padding: 9px 18px; border-radius: 8px; background: #1e293b;
+    color: var(--muted); font-size: 13px; font-weight: 600;
+    border: 1px solid transparent; cursor: pointer;
+    white-space: nowrap; transition: all .2s; font-family: inherit;
+  }
+  .tab:hover { background: #334155; color: var(--text); }
+  .tab.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border-color: transparent;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  .panel {
+    background: var(--panel); border-radius: 14px; padding: 22px;
+    border: 1px solid var(--border); margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.3);
+  }
+  .panel h2 {
+    font-size: 16px; margin-bottom: 14px; color: var(--accent);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel h3 {
+    font-size: 13px; color: #7dd3fc; margin: 16px 0 10px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+    text-transform: uppercase; letter-spacing: .5px;
+  }
   .hidden { display: none !important; }
-  label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px; margin-top: 10px; }
-  input, select { width: 100%; padding: 9px 11px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #e2e8f0; font-size: 14px; font-family: inherit; }
-  input:focus, select:focus { outline: none; border-color: #0ea5e9; }
-  button { padding: 9px 16px; border-radius: 8px; border: none; background: #0ea5e9; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
-  button:hover:not(:disabled) { background: #0284c7; }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
-  button.success { background: #16a34a; }
-  button.danger { background: #dc2626; }
-  button.secondary { background: #475569; }
-  button.purple { background: #7c3aed; }
-  .btn-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-  .setup-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; }
-  .setup-card .name { font-weight: 600; color: #38bdf8; }
-  .setup-card .meta { font-size: 11px; color: #64748b; margin-top: 3px; }
-  .empty { text-align: center; color: #64748b; padding: 24px; font-style: italic; }
-  #canvasWrap { background: #0f172a; border: 2px solid #334155; border-radius: 8px; padding: 6px; overflow: auto; max-height: 500px; display: inline-block; }
+  label {
+    display: block; font-size: 12px; color: var(--muted);
+    margin-bottom: 5px; margin-top: 10px; font-weight: 500;
+  }
+  input, select, textarea {
+    width: 100%; padding: 10px 12px; border-radius: 9px;
+    border: 1px solid #374151; background: #0a0e17; color: var(--text);
+    font-size: 14px; font-family: inherit; transition: border .2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(6,182,212,.15);
+  }
+  button {
+    padding: 10px 20px; border-radius: 9px; border: none;
+    background: linear-gradient(135deg, var(--accent), #0891b2);
+    color: #fff; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .2s; font-family: inherit;
+  }
+  button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(6,182,212,.35);
+  }
+  button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  button.success {
+    background: linear-gradient(135deg, var(--success), #059669);
+  }
+  button.success:hover { box-shadow: 0 6px 20px rgba(16,185,129,.35); }
+  button.danger { background: linear-gradient(135deg, var(--danger), #dc2626); }
+  button.secondary { background: #374151; }
+  button.secondary:hover { box-shadow: 0 6px 20px rgba(55,65,81,.35); }
+  button.purple { background: linear-gradient(135deg, var(--accent2), #7c3aed); }
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .setup-card {
+    background: #0a0e17; border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; margin-bottom: 8px; display: flex;
+    justify-content: space-between; align-items: center;
+    gap: 12px; flex-wrap: wrap; transition: border .2s;
+  }
+  .setup-card:hover { border-color: var(--accent); }
+  .setup-card .name { font-weight: 700; color: #38bdf8; font-size: 15px; }
+  .setup-card .meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .setup-card .actions { display: flex; gap: 6px; }
+  .setup-card .actions button { padding: 6px 14px; font-size: 11px; }
+  .empty { text-align: center; color: var(--muted); padding: 30px; font-style: italic; }
+  #canvasWrap {
+    background: #0a0e17; border: 2px solid var(--border); border-radius: 10px;
+    padding: 10px; overflow: auto; max-height: 520px; display: inline-block;
+  }
   #designCanvas { display: block; cursor: crosshair; image-rendering: pixelated; }
-  .status { padding: 10px 14px; border-radius: 8px; margin-top: 10px; font-size: 13px; }
-  .status.ok { background: #14532d; color: #86efac; }
-  .status.err { background: #7f1d1d; color: #fca5a5; }
-  .status.info { background: #1e3a8a; color: #93c5fd; }
-  .status.warn { background: #78350f; color: #fcd34d; }
-  .help { font-size: 11px; color: #64748b; margin-top: 5px; }
-  .import-box { border: 2px dashed #475569; border-radius: 12px; padding: 20px; text-align: center; background: #0f172a; cursor: pointer; }
-  .import-box:hover { border-color: #0ea5e9; }
-  .import-box .icon { font-size: 32px; }
-  .import-box .title { font-size: 15px; color: #38bdf8; font-weight: 600; margin-top: 6px; }
-  .import-box .subtitle { font-size: 12px; color: #64748b; margin-top: 3px; }
-  .parsed-info { background: #0f172a; border: 1px solid #16a34a; border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 12px; }
-  .kv { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed #1e293b; }
-  .kv .k { color: #94a3b8; }
-  .kv .v { color: #86efac; font-weight: 600; }
-  .preview-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px; margin-top: 10px; overflow: auto; max-height: 400px; }
+  .toolbar {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 12px; padding: 12px; background: #0a0e17; border-radius: 10px;
+  }
+  .swatch {
+    width: 30px; height: 30px; border-radius: 7px; cursor: pointer;
+    border: 2px solid var(--border); transition: all .2s;
+  }
+  .swatch.active { border-color: var(--accent); transform: scale(1.1); }
+  .status {
+    padding: 11px 15px; border-radius: 9px; margin-top: 12px;
+    font-size: 13px; word-break: break-word; border-left: 3px solid;
+  }
+  .status.ok { background: rgba(16,185,129,.1); color: #6ee7b7; border-color: var(--success); }
+  .status.err { background: rgba(239,68,68,.1); color: #fca5a5; border-color: var(--danger); }
+  .status.info { background: rgba(6,182,212,.1); color: #67e8f9; border-color: var(--accent); }
+  .status.warn { background: rgba(245,158,11,.1); color: #fcd34d; border-color: var(--warn); }
+  .help { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.6; }
+  .import-box {
+    border: 2px dashed #374151; border-radius: 14px; padding: 26px;
+    text-align: center; background: #0a0e17; cursor: pointer;
+    transition: all .2s;
+  }
+  .import-box:hover { border-color: var(--accent); background: rgba(6,182,212,.05); }
+  .import-box .icon { font-size: 36px; margin-bottom: 8px; }
+  .import-box .title { font-size: 16px; color: #38bdf8; font-weight: 700; }
+  .import-box .subtitle { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .parsed-card {
+    background: #0a0e17; border: 1px solid var(--success);
+    border-radius: 10px; padding: 14px; margin-top: 12px; font-size: 12px;
+  }
+  .parsed-card .kv {
+    display: flex; justify-content: space-between; padding: 4px 0;
+    border-bottom: 1px dashed #1f2937;
+  }
+  .parsed-card .kv:last-child { border-bottom: none; }
+  .parsed-card .k { color: var(--muted); }
+  .parsed-card .v { color: #6ee7b7; font-weight: 700; }
+  .preview-box {
+    background: #0a0e17; border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px; margin-top: 12px;
+    overflow: auto; max-height: 420px;
+  }
   .preview-box canvas { max-width: 100%; image-rendering: pixelated; }
-  .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-left: 5px; }
-  .badge.EP { background: #7c3aed; }
-  @media (max-width: 640px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } .container { padding: 10px; } }
+  .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 5px;
+    font-size: 10px; font-weight: 700; margin-left: 6px;
+  }
+  .tag.EP { background: var(--accent2); }
+  .tag.JC5 { background: #ea580c; }
+  .tag.CFG { background: #0891b2; }
+  .tag.BMP { background: #16a34a; }
+  .hex-box {
+    font-family: 'Courier New', monospace; font-size: 12px;
+    background: #000; color: #0f0; padding: 12px; border-radius: 8px;
+    border: 1px solid #1f2937; margin-top: 10px; max-height: 200px;
+    overflow: auto; line-height: 1.6; white-space: pre;
+  }
+  @media (max-width: 640px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .container { padding: 12px; }
+    .panel { padding: 16px; }
+    .header { padding: 12px 16px; }
+    .tabs { padding: 10px 16px; }
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>🧵 Jacquard Converter — TIANMAI Edition</h1>
-  <span class="ver">v3.0</span>
-</header>
+<div class="header">
+  <h1>🧵 Jacquard Universal Converter</h1>
+  <span class="badge">Multi-Brand v4.0</span>
+</div>
 
 <div class="tabs">
-  <button class="tab active" data-tab="setups">⚙️ Setups</button>
-  <button class="tab" data-tab="design">🎨 Design</button>
-  <button class="tab" data-tab="convert">🚀 Convert</button>
+  <button class="tab active" data-tab="setups">⚙️ Machine Setups</button>
+  <button class="tab" data-tab="design">🎨 Design Editor</button>
+  <button class="tab" data-tab="convert">🚀 Convert & Download</button>
   <button class="tab" data-tab="help">❓ Help</button>
 </div>
 
 <div class="container">
 
-  <!-- SETUPS -->
-  <div id="tab-setups" class="tab-content">
-    <div class="panel">
-      <h2>🔍 Running File Upload Karo</h2>
-      <p class="help">TIANMAI machine ki `.EP` ya `.cfg` file daalo. Hooks/picks auto fill ho jayenge.</p>
+<!-- ===================== SETUPS TAB ===================== -->
+<div id="tab-setups" class="tab-content">
 
-      <div class="import-box" onclick="document.getElementById('runningFileInput').click()">
-        <div class="icon">📁</div>
-        <div class="title">Running File</div>
-        <div class="subtitle">.EP / .cfg / .BMP / .JC5</div>
+  <div class="panel">
+    <h2>🔍 Running File Upload Karo — Auto Setup</h2>
+    <p class="help">
+      Apni machine ki <b>currently running file</b> daalo (.EP / .JC5 / .cfg / .BMP).
+      App khud hooks, picks, format detect karega aur setup form bhar dega.
+    </p>
+
+    <div class="import-box" onclick="document.getElementById('runningFileInput').click()">
+      <div class="icon">📁</div>
+      <div class="title">Running File Upload</div>
+      <div class="subtitle">Click karo — .EP / .JC5 / .cfg / .BMP / .bin</div>
+    </div>
+    <input type="file" id="runningFileInput" accept="*" class="hidden" onchange="handleRunningFile(event)">
+
+    <div id="parsedInfo"></div>
+
+    <details style="margin-top:14px;">
+      <summary style="cursor:pointer;color:#7dd3fc;font-size:13px;padding:8px 0;">
+        📝 Ya sirf Hex Paste Karo (file bhejne mein dikkat ho toh)
+      </summary>
+      <textarea id="hexInput" placeholder="Pehle 60-80 bytes ka hex yahan paste karo... e.g. 50 4C 43 00 36 37 32 20 41 20 31 31 2E 42 4D 50..."
+        style="height:100px;margin-top:8px;"></textarea>
+      <button class="purple" onclick="parseHexInput()" style="margin-top:8px;">🔍 Parse Hex</button>
+      <div id="hexOutput"></div>
+    </details>
+  </div>
+
+  <div class="panel">
+    <h2>➕ Setup Form — Ek Baar Bana Lo, Hamesha Use Karo</h2>
+
+    <label>Setup Name *</label>
+    <input type="text" id="setupName" placeholder="e.g. TIANMAI 672 A 20">
+
+    <h3>Machine Configuration</h3>
+    <div class="grid-3">
+      <div>
+        <label>Total Hooks (Warp) *</label>
+        <input type="number" id="totalHooks" value="672" min="1">
       </div>
-      <input type="file" id="runningFileInput" accept="*" class="hidden" onchange="handleRunningFile(event)">
-
-      <div id="parsedInfo"></div>
-
-      <!-- Manual hex paste option -->
-      <details style="margin-top:14px;">
-        <summary style="cursor:pointer;color:#7dd3fc;font-size:13px;">📝 Ya sirf hex paste karo (file bhejne mein dikkat ho toh)</summary>
-        <textarea id="hexInput" placeholder="Yahan file ke pehle 60-80 bytes ka hex paste karo... e.g. 50 4C 43 00 36 37 32..." 
-          style="width:100%;height:100px;margin-top:8px;padding:10px;background:#0f172a;color:#e2e8f0;border:1px solid #475569;border-radius:8px;font-family:monospace;font-size:12px;"></textarea>
-        <button class="purple" onclick="parseHexInput()" style="margin-top:8px;">🔍 Parse Hex</button>
-      </details>
+      <div>
+        <label>Hooks per Card</label>
+        <input type="number" id="hooksPerCard" value="2" min="1">
+      </div>
+      <div>
+        <label>Total Picks (Weft)</label>
+        <input type="number" id="totalPicks" value="0" min="0">
+        <p class="help">0 = design se auto</p>
+      </div>
     </div>
 
-    <div class="panel">
-      <h2>➕ Setup Form</h2>
-
-      <label>Setup Name *</label>
-      <input type="text" id="setupName" placeholder="e.g. 672 A 20">
-
-      <h3 style="font-size:13px;color:#7dd3fc;margin:14px 0 8px;border-bottom:1px solid #334155;padding-bottom:5px;">Machine Config</h3>
-      <div class="grid-3">
-        <div>
-          <label>Total Hooks (Warp) *</label>
-          <input type="number" id="totalHooks" value="672" min="1">
-        </div>
-        <div>
-          <label>Hooks per Card</label>
-          <input type="number" id="hooksPerCard" value="2" min="1">
-        </div>
-        <div>
-          <label>Total Picks (Weft)</label>
-          <input type="number" id="totalPicks" value="0" min="0">
-          <p class="help">0 = design se auto</p>
-        </div>
+    <h3>Output Settings</h3>
+    <div class="grid-3">
+      <div>
+        <label>Output Format</label>
+        <select id="outputFormat">
+          <option value="EP">EP (Bonas / TIANMAI / Grosse)</option>
+          <option value="JC5">JC5 (Stäubli)</option>
+        </select>
       </div>
-
-      <h3 style="font-size:13px;color:#7dd3fc;margin:14px 0 8px;border-bottom:1px solid #334155;padding-bottom:5px;">Output Settings</h3>
-      <div class="grid-3">
-        <div>
-          <label>Output Format</label>
-          <select id="outputFormat">
-            <option value="EP">EP (TIANMAI/Bonas)</option>
-            <option value="JC5">JC5 (Stäubli)</option>
-          </select>
-        </div>
-        <div>
-          <label>Feeder Count</label>
-          <input type="number" id="feederCount" value="4" min="1">
-        </div>
-        <div>
-          <label>Takan (Picks/cm)</label>
-          <input type="number" id="takan" value="0" step="0.01" min="0">
-        </div>
+      <div>
+        <label>Feeder Count</label>
+        <input type="number" id="feederCount" value="4" min="1">
       </div>
-
-      <h3 style="font-size:13px;color:#7dd3fc;margin:14px 0 8px;border-bottom:1px solid #334155;padding-bottom:5px;">Advanced (Optional)</h3>
-      <div class="grid-2">
-        <div>
-          <label>Skip Hooks (comma sep.)</label>
-          <input type="text" id="skipHooks" placeholder="e.g. 10,11,50">
-        </div>
-        <div>
-          <label>Feeder Mapping</label>
-          <input type="text" id="feederMapping" placeholder="e.g. 0,1,2,3">
-        </div>
+      <div>
+        <label>Takan (Picks/cm)</label>
+        <input type="number" id="takan" value="0" step="0.01" min="0">
       </div>
-
-      <div class="btn-row">
-        <button class="success" onclick="saveSetup()">💾 Save Setup</button>
-        <button class="secondary" onclick="clearSetupForm()">Clear</button>
-      </div>
-      <div id="setupStatus"></div>
     </div>
 
-    <div class="panel">
-      <h2>📋 Saved Setups</h2>
-      <div id="setupsList"></div>
+    <h3>Advanced (Optional)</h3>
+    <div class="grid-2">
+      <div>
+        <label>Skip Hooks (comma sep.)</label>
+        <input type="text" id="skipHooks" placeholder="e.g. 10,11,50">
+        <p class="help">Jo hooks skip karni hain (density kam karne ke liye)</p>
+      </div>
+      <div>
+        <label>Feeder Mapping</label>
+        <input type="text" id="feederMapping" placeholder="e.g. 0,1,2,3">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="success" onclick="saveSetup()">💾 Save Setup</button>
+      <button class="secondary" onclick="clearSetupForm()">Clear</button>
+    </div>
+    <div id="setupStatus"></div>
+  </div>
+
+  <div class="panel">
+    <h2>📋 Saved Machine Setups</h2>
+    <div id="setupsList"></div>
+  </div>
+</div>
+
+<!-- ===================== DESIGN TAB ===================== -->
+<div id="tab-design" class="tab-content hidden">
+  <div class="panel">
+    <h2>🎨 Design Editor</h2>
+
+    <div class="grid-3">
+      <div>
+        <label>Canvas Width (Hooks)</label>
+        <input type="number" id="canvasW" value="64" min="1" max="4096">
+      </div>
+      <div>
+        <label>Canvas Height (Picks)</label>
+        <input type="number" id="canvasH" value="64" min="1" max="4096">
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button class="secondary" onclick="resizeCanvas()" style="width:100%;">📐 Resize</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="secondary" onclick="clearCanvas()">🧹 Clear</button>
+      <button class="secondary" onclick="invertCanvas()">🔄 Invert</button>
+      <button class="purple" onclick="fillCanvas()">🎨 Fill White</button>
     </div>
   </div>
 
-  <!-- DESIGN -->
-  <div id="tab-design" class="tab-content hidden">
-    <div class="panel">
-      <h2>🎨 Design Banao / Upload Karo</h2>
+  <div class="panel">
+    <h2>🖌️ Draw / Upload</h2>
 
-      <div class="grid-3">
-        <div>
-          <label>Canvas Width</label>
-          <input type="number" id="canvasW" value="64" min="1" max="4096">
-        </div>
-        <div>
-          <label>Canvas Height</label>
-          <input type="number" id="canvasH" value="64" min="1" max="4096">
-        </div>
-        <div>
-          <label>&nbsp;</label>
-          <button class="secondary" onclick="resizeCanvas()" style="width:100%;">📐 Resize</button>
-        </div>
+    <div class="toolbar">
+      <span style="font-size:12px;color:var(--muted);">Brush:</span>
+      <div class="swatch active" data-color="1" style="background:#fff;" title="Lift (White)"></div>
+      <div class="swatch" data-color="0" style="background:#000;" title="Lower (Black)"></div>
+      <span style="font-size:11px;color:var(--muted);margin-left:8px;">
+        White = Lift (Solenoid ON) · Black = Lower (OFF)
+      </span>
+    </div>
+
+    <div id="canvasWrap">
+      <canvas id="designCanvas" width="64" height="64"></canvas>
+    </div>
+
+    <label>Ya Design File Upload Karo (BMP/PNG/JPG)</label>
+    <input type="file" id="bmpUpload" accept=".bmp,.png,.jpg,.jpeg" onchange="loadBmpFile(event)">
+
+    <div class="btn-row">
+      <button class="success" onclick="saveDesignToLocal()">💾 Design Save</button>
+      <button class="secondary" onclick="loadDesignFromLocal()">📂 Load Saved</button>
+      <button class="secondary" onclick="gotoConvert()">➡️ Convert Tab Pe Jao</button>
+    </div>
+    <div id="designStatus"></div>
+  </div>
+</div>
+
+<!-- ===================== CONVERT TAB ===================== -->
+<div id="tab-convert" class="tab-content hidden">
+  <div class="panel">
+    <h2>🚀 Design → Machine File</h2>
+    <p class="help">
+      <b>3 Steps:</b> 1) Saved setup select karo · 2) Design do · 3) Picks set karo → Convert.
+    </p>
+
+    <h3>Step 1: Machine Setup Select Karo</h3>
+    <select id="convertSetup" onchange="onConvertSetupChange()">
+      <option value="">-- Setup chuno --</option>
+    </select>
+    <div id="convertSetupInfo" class="help"></div>
+
+    <h3>Step 2: Design Source</h3>
+    <div class="btn-row" style="margin-top:6px;">
+      <button class="secondary" id="srcCanvasBtn" onclick="setConvertSource('canvas')">🖌️ Current Canvas</button>
+      <button class="secondary" id="srcFileBtn" onclick="setConvertSource('file')">📁 Upload File</button>
+    </div>
+    <input type="file" id="convertFile" accept=".bmp,.png,.jpg,.jpeg" onchange="loadConvertFile(event)" class="hidden" style="margin-top:10px;">
+    <div id="convertSourceInfo" class="help" style="margin-top:8px;">Source: Canvas</div>
+
+    <h3>Step 3: Picks & Repeat</h3>
+    <div class="grid-3">
+      <div>
+        <label>Total Picks</label>
+        <input type="number" id="convPicks" value="0" min="0">
+        <p class="help">0 = design se auto</p>
       </div>
-
-      <div class="btn-row">
-        <button class="secondary" onclick="clearCanvas()">🧹 Clear</button>
-        <button class="secondary" onclick="invertCanvas()">🔄 Invert</button>
-        <button class="purple" onclick="fillCanvas()">🎨 Fill</button>
+      <div>
+        <label>Repeat H (×)</label>
+        <input type="number" id="convRepeatH" value="1" min="1" max="50">
+      </div>
+      <div>
+        <label>Repeat V (×)</label>
+        <input type="number" id="convRepeatV" value="1" min="1" max="50">
       </div>
     </div>
 
-    <div class="panel">
-      <h2>🖌️ Draw / Upload</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;padding:10px;background:#0f172a;border-radius:8px;">
-        <span style="font-size:12px;color:#94a3b8;">Brush:</span>
-        <div class="color-swatch active" data-color="1" style="width:28px;height:28px;background:#fff;border:2px solid #0ea5e9;border-radius:6px;cursor:pointer;"></div>
-        <div class="color-swatch" data-color="0" style="width:28px;height:28px;background:#000;border:2px solid #334155;border-radius:6px;cursor:pointer;"></div>
-        <span style="font-size:11px;color:#64748b;margin-left:6px;">White=Lift · Black=Lower</span>
-      </div>
-      <div id="canvasWrap"><canvas id="designCanvas" width="64" height="64"></canvas></div>
+    <div class="btn-row">
+      <button class="success" id="convertBtn" onclick="runConversion()">⚡ Convert to Machine File</button>
+      <button class="secondary" onclick="previewOnly()">👁️ Preview Only</button>
+    </div>
 
-      <label>Ya File Upload Karo</label>
-      <input type="file" id="bmpUpload" accept=".bmp,.png,.jpg,.jpeg" onchange="loadBmpFile(event)">
-
-      <div class="btn-row">
-        <button class="success" onclick="saveDesignToLocal()">💾 Design Save</button>
-        <button class="secondary" onclick="loadDesignFromLocal()">📂 Load</button>
-        <button class="secondary" onclick="gotoConvert()">➡️ Convert Tab</button>
-      </div>
-      <div id="designStatus"></div>
+    <div id="convertStatus"></div>
+    <div id="previewWrap" class="preview-box hidden">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Mapped Preview:</p>
+      <canvas id="previewCanvas"></canvas>
     </div>
   </div>
+</div>
 
-  <!-- CONVERT -->
-  <div id="tab-convert" class="tab-content hidden">
-    <div class="panel">
-      <h2>🚀 Design → Machine File</h2>
-
-      <h3 style="font-size:13px;color:#7dd3fc;margin-bottom:8px;">Step 1: Setup Select Karo</h3>
-      <select id="convertSetup" onchange="onConvertSetupChange()">
-        <option value="">-- Setup chuno --</option>
-      </select>
-      <div id="convertSetupInfo" class="help"></div>
-
-      <h3 style="font-size:13px;color:#7dd3fc;margin:14px 0 8px;">Step 2: Design Do</h3>
-      <div class="btn-row" style="margin-top:6px;">
-        <button class="secondary" id="srcCanvasBtn" onclick="setConvertSource('canvas')">🖌️ Current Canvas</button>
-        <button class="secondary" id="srcFileBtn" onclick="setConvertSource('file')">📁 Upload File</button>
-      </div>
-      <input type="file" id="convertFile" accept=".bmp,.png,.jpg,.jpeg" onchange="loadConvertFile(event)" class="hidden" style="margin-top:10px;">
-      <div id="convertSourceInfo" class="help" style="margin-top:6px;">Source: Canvas</div>
-
-      <h3 style="font-size:13px;color:#7dd3fc;margin:14px 0 8px;">Step 3: Picks & Repeat</h3>
-      <div class="grid-3">
-        <div>
-          <label>Total Picks</label>
-          <input type="number" id="convPicks" value="0" min="0">
-          <p class="help">0 = design se</p>
-        </div>
-        <div>
-          <label>Repeat H (×)</label>
-          <input type="number" id="convRepeatH" value="1" min="1" max="50">
-        </div>
-        <div>
-          <label>Repeat V (×)</label>
-          <input type="number" id="convRepeatV" value="1" min="1" max="50">
-        </div>
-      </div>
-
-      <div class="btn-row">
-        <button class="success" id="convertBtn" onclick="runConversion()">⚡ Convert to .EP</button>
-        <button class="secondary" onclick="previewOnly()">👁️ Preview</button>
-      </div>
-
-      <div id="convertStatus"></div>
-      <div id="previewWrap" class="preview-box hidden">
-        <p style="font-size:12px;color:#94a3b8;margin-bottom:6px;">Preview:</p>
-        <canvas id="previewCanvas"></canvas>
-      </div>
-    </div>
+<!-- ===================== HELP TAB ===================== -->
+<div id="tab-help" class="tab-content hidden">
+  <div class="panel">
+    <h2>❓ Kaise Use Karein</h2>
+    <ol style="line-height:2.2;padding-left:20px;color:#cbd5e1;font-size:13px;">
+      <li><b>Setups tab</b> → Running file upload karo → Auto-fill hoga → Naam do → <b>Save</b></li>
+      <li><b>Design tab</b> → Naya design banao ya BMP/PNG upload karo</li>
+      <li><b>Convert tab</b> → Saved setup select karo → Picks set karo → <b>Convert</b></li>
+      <li>File download ho jayegi → USB mein daalo → Machine mein run karo</li>
+    </ol>
   </div>
-
-  <!-- HELP -->
-  <div id="tab-help" class="tab-content hidden">
-    <div class="panel">
-      <h2>❓ TIANMAI Flow</h2>
-      <ol style="line-height:1.9;padding-left:18px;color:#cbd5e1;font-size:13px;">
-        <li><b>Setups</b> → running `.EP`/`.cfg` upload karo</li>
-        <li>Form auto-fill hoga → naam do → <b>Save</b></li>
-        <li><b>Design</b> tab → naya design banao/upload</li>
-        <li><b>Convert</b> tab → setup select → picks set → <b>Convert</b></li>
-        <li>File download → USB mein daalo → machine mein run</li>
-      </ol>
-    </div>
-    <div class="panel">
-      <h2>💡 Rules</h2>
-      <p class="help">• White = Lift (ON)<br>• Black = Lower (OFF)<br>• Hooks = Warp threads (672)<br>• Picks = Weft insertions (120)</p>
-    </div>
+  <div class="panel">
+    <h2>💡 Rules</h2>
+    <p class="help">
+      • <b>White pixel</b> = Hook Lift (Solenoid ON)<br>
+      • <b>Black pixel</b> = Hook Lower (Solenoid OFF)<br>
+      • <b>Hooks</b> = Warp threads (columns)<br>
+      • <b>Picks</b> = Weft insertions (rows)<br>
+      • <b>Skip Hooks</b> = Jo hooks machine mein use nahi hote
+    </p>
   </div>
+  <div class="panel">
+    <h2>⚠️ Note</h2>
+    <p class="help">
+      EP / JC5 / CFG header parsing reverse-engineered hai (open-source research se).
+      Agar teri machine ka format alag hai, toh hex dump bhej — parser tune kar dunga.
+    </p>
+  </div>
+</div>
 
 </div>
 
 <script>
-const LS_SETUPS = 'jacquard_setups_v3';
-const LS_DESIGN = 'jacquard_design_v3';
+/* ============================================================
+   JACQUARD UNIVERSAL CONVERTER v4.0
+   Multi-Brand: EP (Bonas/TIANMAI) · JC5 (Stäubli) · CFG · BMP
+   ============================================================ */
+
+const LS_SETUPS = 'jacquard_setups_v4';
+const LS_DESIGN = 'jacquard_design_v4';
+
 let brushColor = 1, isDrawing = false;
 let convertSource = 'canvas';
 let convertImageData = null;
 let parsedRunningFile = null;
 
-/* TABS */
+/* ---------- TABS ---------- */
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -304,7 +462,7 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 function gotoConvert() { document.querySelector('.tab[data-tab="convert"]').click(); }
 
-/* CANVAS */
+/* ---------- CANVAS ---------- */
 const canvas = document.getElementById('designCanvas');
 const ctx = canvas.getContext('2d');
 let canvasState = [];
@@ -317,17 +475,19 @@ function initCanvas() {
   }
   getCanvasState(); drawCanvas();
 }
+
 function drawCanvas() {
   const w = canvas.width, h = canvas.height;
-  const imgData = ctx.createImageData(w, h);
-  const d = imgData.data; const s = getCanvasState();
+  const img = ctx.createImageData(w, h);
+  const d = img.data; const s = getCanvasState();
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = (y * w + x) * 4;
     const v = s[y][x] ? 255 : 0;
     d[i] = d[i+1] = d[i+2] = v; d[i+3] = 255;
   }
-  ctx.putImageData(imgData, 0, 0);
+  ctx.putImageData(img, 0, 0);
 }
+
 function getCanvasState() {
   if (!canvasState.length || canvasState.length !== canvas.height ||
       !canvasState[0] || canvasState[0].length !== canvas.width) {
@@ -335,12 +495,14 @@ function getCanvasState() {
   }
   return canvasState;
 }
+
 function setPixel(x, y, val) {
   const s = getCanvasState();
   if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
     s[y][x] = val; drawCanvas();
   }
 }
+
 function getPx(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
   return {
@@ -348,17 +510,19 @@ function getPx(clientX, clientY) {
     y: Math.floor((clientY - rect.top) * canvas.height / rect.height)
   };
 }
+
 canvas.addEventListener('mousedown', e => { isDrawing = true; const p = getPx(e.clientX, e.clientY); setPixel(p.x, p.y, brushColor); });
 canvas.addEventListener('mousemove', e => { if (!isDrawing) return; const p = getPx(e.clientX, e.clientY); setPixel(p.x, p.y, brushColor); });
 window.addEventListener('mouseup', () => isDrawing = false);
+
 canvas.addEventListener('touchstart', e => { e.preventDefault(); isDrawing = true; const t = e.touches[0]; const p = getPx(t.clientX, t.clientY); setPixel(p.x, p.y, brushColor); }, {passive:false});
 canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!isDrawing) return; const t = e.touches[0]; const p = getPx(t.clientX, t.clientY); setPixel(p.x, p.y, brushColor); }, {passive:false});
 window.addEventListener('touchend', () => isDrawing = false);
 
-document.querySelectorAll('.color-swatch').forEach(sw => {
+document.querySelectorAll('.swatch').forEach(sw => {
   sw.addEventListener('click', () => {
-    document.querySelectorAll('.color-swatch').forEach(s => s.style.borderColor = '#334155');
-    sw.style.borderColor = '#0ea5e9';
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
     brushColor = parseInt(sw.dataset.color);
   });
 });
@@ -368,7 +532,7 @@ function clearCanvas() { const s = getCanvasState(); for (let y=0;y<canvas.heigh
 function invertCanvas() { const s = getCanvasState(); for (let y=0;y<canvas.height;y++) for (let x=0;x<canvas.width;x++) s[y][x]=s[y][x]?0:1; drawCanvas(); }
 function fillCanvas() { const s = getCanvasState(); for (let y=0;y<canvas.height;y++) for (let x=0;x<canvas.width;x++) s[y][x]=1; drawCanvas(); }
 
-/* IMAGE LOADER */
+/* ---------- IMAGE LOADER ---------- */
 function loadBmpFile(ev) {
   const file = ev.target.files[0]; if (!file) return;
   imageToGrid(file, (grid, w, h) => {
@@ -379,6 +543,7 @@ function loadBmpFile(ev) {
     setDesignStatus('ok', `✅ Loaded ${w}×${h}`);
   }, () => setDesignStatus('err', 'Load fail'));
 }
+
 function imageToGrid(file, onLoad, onErr) {
   const img = new Image();
   img.onload = () => {
@@ -402,26 +567,26 @@ function imageToGrid(file, onLoad, onErr) {
   img.src = URL.createObjectURL(file);
 }
 
-/* SAVE/LOAD DESIGN */
+/* ---------- DESIGN SAVE/LOAD ---------- */
 function saveDesignToLocal() {
   const s = getCanvasState();
   localStorage.setItem(LS_DESIGN, JSON.stringify({w: canvas.width, h: canvas.height, grid: s}));
-  setDesignStatus('ok', '✅ Saved');
+  setDesignStatus('ok', '✅ Design saved to browser');
 }
 function loadDesignFromLocal() {
   const raw = localStorage.getItem(LS_DESIGN);
-  if (!raw) return setDesignStatus('err', 'Kuch saved nahi');
+  if (!raw) return setDesignStatus('err', 'Koi saved design nahi');
   const d = JSON.parse(raw);
   canvas.width = d.w; canvas.height = d.h;
   document.getElementById('canvasW').value = d.w;
   document.getElementById('canvasH').value = d.h;
   canvasState = d.grid; drawCanvas();
-  setDesignStatus('ok', '✅ Loaded');
+  setDesignStatus('ok', '✅ Design loaded');
 }
 function setDesignStatus(t, m) { document.getElementById('designStatus').innerHTML = `<div class="status ${t}">${m}</div>`; }
 
 /* ============================================================
-   RUNNING FILE PARSERS — v3.0
+   RUNNING FILE PARSER — MULTI-BRAND
    ============================================================ */
 
 function handleRunningFile(ev) {
@@ -435,10 +600,10 @@ function handleRunningFile(ev) {
       let parsed = null;
 
       if (ext === 'cfg') parsed = parseCFG(buffer, file);
-      else if (ext === 'ep') parsed = parseEP_TIANMAI(buffer, file);
+      else if (ext === 'ep') parsed = parseEP(buffer, file);
       else if (ext === 'jc5') parsed = parseJC5(buffer, file);
       else if (['bmp','png','jpg','jpeg'].includes(ext)) { parseImageAsRunning(file); return; }
-      else parsed = parseCFG(buffer, file) || parseEP_TIANMAI(buffer, file);
+      else parsed = parseEP(buffer, file) || parseCFG(buffer, file);
 
       if (parsed && parsed.hooks > 0) {
         parsedRunningFile = parsed;
@@ -456,7 +621,60 @@ function handleRunningFile(ev) {
   reader.readAsArrayBuffer(file);
 }
 
-/* ---- CFG Parser (DesignView/PLC format) ---- */
+/* ---- EP Parser (Bonas + TIANMAI compatible) ---- */
+function parseEP(buffer, file) {
+  const dv = new DataView(buffer);
+  const totalBytes = buffer.byteLength;
+  const fileBase = file.name.replace(/\.ep$/i, '');
+  const nameMatch = fileBase.match(/^(\d+)\s*[A-Z]\s*(\d+)$/i);
+
+  // Try multiple header patterns
+  const candidates = [
+    { hooks: dv.getUint16(0x20, true), picks: dv.getUint16(0x03, true), offset: 0x22, fmt: 'Bonas/Standard' },
+    { hooks: dv.getUint16(0x10, true), picks: dv.getUint16(0x12, true), offset: 0x20, fmt: 'Chinese-0x10' },
+    { hooks: dv.getUint16(0, true), picks: dv.getUint16(2, true), offset: 8, fmt: 'Plain' }
+  ];
+
+  let best = null;
+  for (const c of candidates) {
+    if (c.hooks > 10 && c.hooks < 20000 && c.picks > 10 && c.picks < 100000) {
+      const expected = c.offset + Math.ceil(c.hooks / 8) * c.picks;
+      c.diff = Math.abs(expected - totalBytes);
+      if (!best || c.diff < best.diff) best = c;
+    }
+  }
+
+  let hooks = best ? best.hooks : 0;
+  let picks = best ? best.picks : 0;
+  if (nameMatch && !hooks) hooks = parseInt(nameMatch[1]);
+
+  return {
+    type: 'EP', hooks, picks,
+    originalName: fileBase || 'running',
+    fileSize: totalBytes,
+    format: best ? best.fmt : 'unknown',
+    confidence: best ? (best.diff === 0 ? 'HIGH' : 'MEDIUM') : 'LOW'
+  };
+}
+
+/* ---- JC5 Parser (Stäubli) ---- */
+function parseJC5(buffer, file) {
+  const dv = new DataView(buffer);
+  const magic = String.fromCharCode(buffer[0], buffer[1], buffer[2]);
+  let hooks, picks;
+  if (magic === 'JC5') {
+    hooks = dv.getUint16(4, true); picks = dv.getUint16(6, true);
+  } else {
+    hooks = dv.getUint16(0, true); picks = dv.getUint16(2, true);
+  }
+  return {
+    type: 'JC5', hooks, picks,
+    originalName: file.name.replace('.jc5', ''),
+    fileSize: buffer.byteLength
+  };
+}
+
+/* ---- CFG Parser (DesignView/PLC) ---- */
 function parseCFG(buffer, file) {
   const bytes = new Uint8Array(buffer.slice(0, Math.min(300, buffer.byteLength)));
   let header = '';
@@ -481,77 +699,6 @@ function parseCFG(buffer, file) {
   };
 }
 
-/* ---- TIANMAI EP Parser (best guess from Bonas + TIANMAI screens) ---- */
-function parseEP_TIANMAI(buffer, file) {
-  const dv = new DataView(buffer);
-  const totalBytes = buffer.byteLength;
-  const fileBase = file.name.replace(/\.ep$/i, '');
-  const nameMatch = fileBase.match(/^(\d+)\s*[A-Z]\s*(\d+)$/i);
-
-  // Try to detect TIANMAI header patterns
-  // Candidate 1: Bonas EP format (most common)
-  const candA = {
-    hooks: dv.getUint16(22, true),
-    picks: dv.getUint16(3, true),
-    offset: 34,
-    fmt: 'Bonas'
-  };
-
-  // Candidate 2: 0x10 header (some Chinese EP)
-  const candB = {
-    hooks: dv.getUint16(0x10, true),
-    picks: dv.getUint16(0x12, true),
-    offset: 0x20,
-    fmt: 'Chinese-0x10'
-  };
-
-  // Candidate 3: plain header — hooks & picks as first 4 bytes
-  const candC = {
-    hooks: dv.getUint16(0, true),
-    picks: dv.getUint16(2, true),
-    offset: 8,
-    fmt: 'Plain'
-  };
-
-  // Pick best candidate based on plausible size
-  const candidates = [candA, candB, candC].filter(c =>
-    c.hooks > 10 && c.hooks < 20000 && c.picks > 10 && c.picks < 100000
-  );
-
-  let best = null;
-  for (const c of candidates) {
-    const expected = c.offset + Math.ceil(c.hooks / 8) * c.picks;
-    c.diff = Math.abs(expected - totalBytes);
-    if (!best || c.diff < best.diff) best = c;
-  }
-
-  // Fallback: use filename if parse fails
-  let hooks = best ? best.hooks : 0;
-  let picks = best ? best.picks : 0;
-
-  if (nameMatch && !hooks) hooks = parseInt(nameMatch[1]);
-
-  return {
-    type: 'EP', hooks, picks,
-    originalName: fileBase || 'running',
-    fileSize: totalBytes,
-    format: best ? best.fmt : 'unknown',
-    confidence: best ? (best.diff === 0 ? 'high' : 'medium') : 'low'
-  };
-}
-
-function parseJC5(buffer, file) {
-  const dv = new DataView(buffer);
-  let hooks = dv.getUint16(4, true);
-  let picks = dv.getUint16(6, true);
-  if (!hooks || hooks > 20000) { hooks = dv.getUint16(0, true); picks = dv.getUint16(2, true); }
-  return {
-    type: 'JC5', hooks, picks,
-    originalName: file.name.replace('.jc5', ''),
-    fileSize: buffer.byteLength
-  };
-}
-
 function parseImageAsRunning(file) {
   imageToGrid(file, (grid, w, h) => {
     const parsed = {
@@ -567,7 +714,7 @@ function parseImageAsRunning(file) {
   });
 }
 
-/* HEX INPUT PARSER */
+/* ---- HEX INPUT PARSER ---- */
 function parseHexInput() {
   const raw = document.getElementById('hexInput').value.trim();
   if (!raw) return;
@@ -575,10 +722,8 @@ function parseHexInput() {
     const hex = raw.replace(/[^0-9a-fA-F]/g, '');
     if (hex.length < 16) throw new Error('Bahut kam hex');
     const bytes = new Uint8Array(hex.match(/.{1,2}/g).map(b => parseInt(b, 16)));
-    const fakeFile = { name: 'hex_input.ep' };
 
-    // Try as EP
-    let parsed = parseEP_TIANMAI(bytes.buffer, fakeFile);
+    let parsed = parseEP(bytes.buffer, {name: 'hex_input.ep'});
     if (!parsed.hooks) parsed = parseCFG(bytes.buffer, {name: 'hex.cfg'});
 
     if (parsed && parsed.hooks) {
@@ -602,7 +747,7 @@ function autoFillSetupForm(parsed) {
   document.getElementById('outputFormat').value = (parsed.type === 'JC5') ? 'JC5' : 'EP';
   ['totalHooks','totalPicks','setupName'].forEach(id => {
     const el = document.getElementById(id);
-    el.style.borderColor = '#16a34a';
+    el.style.borderColor = '#10b981';
     setTimeout(() => el.style.borderColor = '', 1500);
   });
 }
@@ -620,22 +765,26 @@ function showParsedInfo(p) {
   if (p.format) rows.push(['Format', p.format]);
   if (p.confidence) rows.push(['Confidence', p.confidence]);
 
-  document.getElementById('parsedInfo').innerHTML = `<div class="parsed-info">
-    <div style="font-weight:600;color:#16a34a;margin-bottom:8px;">✅ Parse Done</div>
+  document.getElementById('parsedInfo').innerHTML = `<div class="parsed-card">
+    <div style="font-weight:700;color:#10b981;margin-bottom:8px;">✅ Parse Done — Auto-Filled!</div>
     ${rows.map(([k,v]) => `<div class="kv"><span class="k">${esc(k)}</span><span class="v">${esc(String(v))}</span></div>`).join('')}
-    <div style="margin-top:10px;font-size:11px;color:#94a3b8;">
-      → Setup name confirm karo → <b>Save Setup</b> dabao
+    <div style="margin-top:10px;font-size:11px;color:var(--muted);">
+      → Neeche form mein <b>setup name confirm</b> karo → <b>Save Setup</b> dabao
     </div>
   </div>`;
 }
 
-/* SETUPS */
+/* ============================================================
+   SETUPS (localStorage)
+   ============================================================ */
+
 function getSetups() { try { return JSON.parse(localStorage.getItem(LS_SETUPS) || '[]'); } catch { return []; } }
 function setSetups(arr) { localStorage.setItem(LS_SETUPS, JSON.stringify(arr)); }
 
 function saveSetup() {
   const name = document.getElementById('setupName').value.trim();
-  if (!name) return setSetupStatus('err', 'Naam zaroori hai');
+  if (!name) return setSetupStatus('err', 'Setup name zaroori hai');
+
   const setup = {
     id: 'setup_' + Date.now(),
     name,
@@ -654,7 +803,7 @@ function saveSetup() {
   clearSetupForm(); parsedRunningFile = null;
   document.getElementById('parsedInfo').innerHTML = '';
   renderSetups(); refreshConvertDropdown();
-  setSetupStatus('ok', `✅ "${name}" saved!`);
+  setSetupStatus('ok', `✅ "${name}" save ho gaya! Ab Design tab pe jao.`);
 }
 
 function clearSetupForm() {
@@ -668,7 +817,7 @@ function clearSetupForm() {
 }
 
 function deleteSetup(id) {
-  if (!confirm('Delete?')) return;
+  if (!confirm('Yeh setup delete karna hai?')) return;
   setSetups(getSetups().filter(s => s.id !== id));
   renderSetups(); refreshConvertDropdown();
 }
@@ -676,16 +825,21 @@ function deleteSetup(id) {
 function renderSetups() {
   const list = document.getElementById('setupsList');
   const arr = getSetups();
-  if (!arr.length) { list.innerHTML = '<div class="empty">Koi setup nahi</div>'; return; }
+  if (!arr.length) { list.innerHTML = '<div class="empty">Koi setup save nahi hai. Upar running file upload karo.</div>'; return; }
   list.innerHTML = arr.map(s => `
     <div class="setup-card">
       <div style="flex:1;min-width:180px;">
-        <div class="name">${esc(s.name)} <span class="badge ${s.outputFormat}">${s.outputFormat}</span></div>
-        <div class="meta">${s.totalHooks}h · ${s.totalPicks||'auto'} picks · ${s.hooksPerCard}/card · ${s.feederCount} feeders${s.takan?' · takan '+s.takan:''}</div>
+        <div class="name">${esc(s.name)} <span class="tag ${s.outputFormat}">${s.outputFormat}</span>
+          ${s.parsedFrom !== 'manual' ? '<span class="tag" style="background:#16a34a;">AUTO</span>' : ''}
+        </div>
+        <div class="meta">
+          ${s.totalHooks} hooks · ${s.totalPicks||'auto'} picks · ${s.hooksPerCard}/card · ${s.feederCount} feeders
+          ${s.takan ? ' · Takan: '+s.takan : ''}
+        </div>
       </div>
-      <div style="display:flex;gap:6px;">
-        <button class="purple" onclick="useSetup('${s.id}')" style="padding:6px 12px;font-size:12px;">Use</button>
-        <button class="danger" onclick="deleteSetup('${s.id}')" style="padding:6px 12px;font-size:12px;">Del</button>
+      <div class="actions">
+        <button class="purple" onclick="useSetup('${s.id}')">Use</button>
+        <button class="danger" onclick="deleteSetup('${s.id}')">Delete</button>
       </div>
     </div>`).join('');
 }
@@ -699,10 +853,13 @@ function useSetup(id) {
 
 function setSetupStatus(t, m) {
   document.getElementById('setupStatus').innerHTML = `<div class="status ${t}">${m}</div>`;
-  setTimeout(() => document.getElementById('setupStatus').innerHTML = '', 5000);
+  setTimeout(() => { const el = document.getElementById('setupStatus'); if (el) el.innerHTML = ''; }, 5000);
 }
 
-/* CONVERT */
+/* ============================================================
+   CONVERT
+   ============================================================ */
+
 function refreshConvertDropdown() {
   const sel = document.getElementById('convertSetup');
   const cur = sel.value;
@@ -717,7 +874,7 @@ function onConvertSetupChange() {
   const setup = getSetups().find(s => s.id === id);
   const info = document.getElementById('convertSetupInfo');
   if (!setup) { info.textContent = ''; return; }
-  info.innerHTML = `✅ <b>${esc(setup.name)}</b> — ${setup.totalHooks} hooks, ${setup.totalPicks||'auto'} picks, ${setup.outputFormat}`;
+  info.innerHTML = `✅ <b>${esc(setup.name)}</b> — ${setup.totalHooks} hooks, ${setup.totalPicks||'auto'} picks, format: ${setup.outputFormat}`;
   if (setup.totalPicks) document.getElementById('convPicks').value = setup.totalPicks;
 }
 
@@ -726,7 +883,7 @@ function setConvertSource(src) {
   const info = document.getElementById('convertSourceInfo');
   const fi = document.getElementById('convertFile');
   if (src === 'canvas') { fi.classList.add('hidden'); info.textContent = 'Source: Canvas'; }
-  else { fi.classList.remove('hidden'); info.textContent = 'Source: File upload'; }
+  else { fi.classList.remove('hidden'); info.textContent = 'Source: File Upload'; }
 }
 
 function loadConvertFile(ev) {
@@ -741,7 +898,7 @@ function loadConvertFile(ev) {
 
 function buildSourceGrid() {
   if (convertSource === 'file') {
-    if (!convertImageData) throw new Error('File upload karo pehle');
+    if (!convertImageData) throw new Error('Pehle file upload karo');
     return convertImageData.grid;
   }
   return getCanvasState().map(r => [...r]);
@@ -792,7 +949,7 @@ function previewOnly() {
     grid = applyPicks(grid, parseInt(document.getElementById('convPicks').value) || 0);
     const mapped = applyHarness(grid, setup);
     showPreview(mapped);
-    setConvertStatus('info', `👁️ ${mapped[0].length}h × ${mapped.length}p`);
+    setConvertStatus('info', `👁️ Preview: ${mapped[0].length} hooks × ${mapped.length} picks`);
   } catch (err) { setConvertStatus('err', err.message); }
 }
 
@@ -813,11 +970,17 @@ function runConversion() {
     const mapped = applyHarness(grid, setup);
     showPreview(mapped);
 
-    const blob = generateEP(mapped, setup);
-    const fname = `${setup.name.replace(/\s+/g,'_')}_${Date.now()}.EP`;
+    let blob, ext;
+    if (setup.outputFormat === 'JC5') {
+      blob = generateJC5(mapped, setup); ext = 'jc5';
+    } else {
+      blob = generateEP(mapped, setup); ext = 'EP';
+    }
+
+    const fname = `${setup.name.replace(/\s+/g,'_')}_${Date.now()}.${ext}`;
     downloadBlob(blob, fname);
 
-    setConvertStatus('ok', `✅ ${mapped[0].length}h × ${mapped.length}p → ${fname}`);
+    setConvertStatus('ok', `✅ File Ready! ${mapped[0].length} hooks × ${mapped.length} picks → ${fname}`);
   } catch (err) {
     console.error(err);
     setConvertStatus('err', 'Error: ' + err.message);
@@ -841,19 +1004,49 @@ function showPreview(grid) {
   pctx.putImageData(img, 0, 0);
 }
 
-/* EP GENERATOR (Bonas-compatible) */
+/* ============================================================
+   FILE GENERATORS — MULTI-BRAND
+   ============================================================ */
+
+/* ---- EP Generator (Bonas / TIANMAI compatible) ---- */
 function generateEP(grid, setup) {
   const h = grid.length, w = grid[0].length;
-  const headerSize = 34;
+  const headerSize = 34; // 0x22
   const bytesPerRow = Math.ceil(w / 8);
   const buf = new Uint8Array(headerSize + bytesPerRow * h);
   const dv = new DataView(buf.buffer);
 
-  dv.setUint16(0, 0x0001, true);
-  dv.setUint16(3, h, true);
+  dv.setUint16(0, 0x0001, true);       // version
+  dv.setUint16(3, h, true);            // total picks
   const fname = (setup.name || 'design').slice(0, 14);
   for (let i = 0; i < 14; i++) buf[6 + i] = i < fname.length ? fname.charCodeAt(i) : 0;
-  dv.setUint16(22, w, true);
+  dv.setUint16(0x20, w, true);         // total hooks
+
+  let off = headerSize;
+  for (let y = 0; y < h; y++) {
+    for (let b = 0; b < bytesPerRow; b++) {
+      let byte = 0;
+      for (let bit = 0; bit < 8; bit++) {
+        const x = b * 8 + bit;
+        if (x < w && grid[y][x]) byte |= (1 << bit); // LSB first
+      }
+      buf[off++] = byte;
+    }
+  }
+  return new Blob([buf], {type: 'application/octet-stream'});
+}
+
+/* ---- JC5 Generator (Stäubli) ---- */
+function generateJC5(grid, setup) {
+  const h = grid.length, w = grid[0].length;
+  const headerSize = 12;
+  const bytesPerRow = Math.ceil(w / 8);
+  const buf = new Uint8Array(headerSize + bytesPerRow * h);
+  const dv = new DataView(buf.buffer);
+
+  buf[0] = 0x4A; buf[1] = 0x43; buf[2] = 0x35; buf[3] = 0x00; // "JC5\0"
+  dv.setUint16(4, w, true);
+  dv.setUint16(6, h, true);
 
   let off = headerSize;
   for (let y = 0; y < h; y++) {
@@ -886,7 +1079,7 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-/* INIT */
+/* ---------- INIT ---------- */
 window.addEventListener('load', () => {
   renderSetups(); initCanvas(); refreshConvertDropdown();
 });
