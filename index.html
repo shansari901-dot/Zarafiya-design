@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jacquard Designer & Converter</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f172a; color: #e2e8f0; min-height: 100vh;
+  }
+  header {
+    background: #1e293b; padding: 16px 24px; border-bottom: 2px solid #334155;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  header h1 { font-size: 20px; color: #38bdf8; }
+  header .ver { font-size: 12px; color: #64748b; }
+  .tabs {
+    display: flex; gap: 4px; padding: 12px 24px; background: #1e293b;
+    border-bottom: 1px solid #334155; overflow-x: auto;
+  }
+  .tab {
+    padding: 10px 20px; border-radius: 8px; cursor: pointer;
+    background: #334155; color: #cbd5e1; font-size: 14px;
+    font-weight: 500; white-space: nowrap; transition: 0.2s;
+    border: none;
+  }
+  .tab:hover { background: #475569; }
+  .tab.active { background: #0ea5e9; color: #fff; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .panel {
+    background: #1e293b; border-radius: 12px; padding: 24px;
+    border: 1px solid #334155; margin-bottom: 20px;
+  }
+  .panel h2 {
+    font-size: 18px; margin-bottom: 16px; color: #38bdf8;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hidden { display: none !important; }
+  label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; margin-top: 12px; }
+  input[type="text"], input[type="number"], select {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid #475569; background: #0f172a; color: #e2e8f0;
+    font-size: 14px; font-family: inherit;
+  }
+  input:focus, select:focus { outline: none; border-color: #0ea5e9; }
+  button {
+    padding: 10px 18px; border-radius: 8px; border: none;
+    background: #0ea5e9; color: #fff; font-size: 14px;
+    font-weight: 600; cursor: pointer; transition: 0.2s;
+    font-family: inherit;
+  }
+  button:hover:not(:disabled) { background: #0284c7; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.danger { background: #dc2626; }
+  button.danger:hover { background: #b91c1c; }
+  button.success { background: #16a34a; }
+  button.success:hover { background: #15803d; }
+  button.secondary { background: #475569; }
+  button.secondary:hover { background: #64748b; }
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .setup-card {
+    background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+    padding: 14px; margin-bottom: 10px; display: flex;
+    justify-content: space-between; align-items: center; gap: 12px;
+  }
+  .setup-card .info { flex: 1; }
+  .setup-card .name { font-weight: 600; color: #38bdf8; margin-bottom: 4px; }
+  .setup-card .meta { font-size: 12px; color: #64748b; }
+  .empty { text-align: center; color: #64748b; padding: 30px; font-style: italic; }
+  #canvasWrap {
+    background: #0f172a; border: 2px solid #334155; border-radius: 8px;
+    padding: 8px; overflow: auto; max-height: 500px; display: inline-block;
+  }
+  #designCanvas { display: block; cursor: crosshair; image-rendering: pixelated; }
+  .toolbar {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 12px; padding: 12px; background: #0f172a;
+    border-radius: 8px;
+  }
+  .toolbar .color-swatch {
+    width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
+    border: 2px solid #334155;
+  }
+  .toolbar .color-swatch.active { border-color: #0ea5e9; }
+  .status {
+    padding: 10px 14px; border-radius: 8px; margin-top: 12px;
+    font-size: 14px;
+  }
+  .status.ok { background: #14532d; color: #86efac; }
+  .status.err { background: #7f1d1d; color: #fca5a5; }
+  .status.info { background: #1e3a8a; color: #93c5fd; }
+  .preview-box {
+    background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+    padding: 12px; margin-top: 12px;
+  }
+  .preview-box canvas { max-width: 100%; image-rendering: pixelated; }
+  .help {
+    font-size: 12px; color: #64748b; margin-top: 6px; line-height: 1.5;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 600; margin-left: 6px;
+  }
+  .badge.EP { background: #7c3aed; }
+  .badge.JC5 { background: #ea580c; }
+  .badge.BMP { background: #0891b2; }
+  @media (max-width: 640px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .container { padding: 12px; }
+    .panel { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧵 Jacquard Designer & Converter</h1>
+  <span class="ver">v1.0 · Offline · localStorage</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="setups">⚙️ Setups</button>
+  <button class="tab" data-tab="design">🎨 Design</button>
+  <button class="tab" data-tab="convert">🚀 Convert</button>
+  <button class="tab" data-tab="help">❓ Help</button>
+</div>
+
+<div class="container">
+
+  <!-- ============ SETUPS TAB ============ -->
+  <div id="tab-setups" class="tab-content">
+    <div class="panel">
+      <h2>➕ Naya Machine Setup Banao</h2>
+      <p class="help">Ek baar setup save karo, phir hamesha sirf design daal ke file ready kar sakte ho.</p>
+
+      <label>Setup Name *</label>
+      <input type="text" id="setupName" placeholder="e.g. My Bonas 1344">
+
+      <div class="grid-2">
+        <div>
+          <label>Total Hooks *</label>
+          <input type="number" id="totalHooks" value="1344" min="1">
+        </div>
+        <div>
+          <label>Hooks per Card</label>
+          <input type="number" id="hooksPerCard" value="2" min="1">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label>Output Format</label>
+          <select id="outputFormat">
+            <option value="EP">EP (Bonas)</option>
+            <option value="JC5">JC5 (Stäubli)</option>
+          </select>
+        </div>
+        <div>
+          <label>Feeder Count</label>
+          <input type="number" id="feederCount" value="4" min="1">
+        </div>
+      </div>
+
+      <label>Skip Hooks (comma separated, optional)</label>
+      <input type="text" id="skipHooks" placeholder="e.g. 10,11,50">
+
+      <label>Feeder Mapping (comma separated, optional)</label>
+      <input type="text" id="feederMapping" placeholder="e.g. 0,1,2,3">
+
+      <div class="btn-row">
+        <button onclick="saveSetup()">💾 Save Setup</button>
+        <button class="secondary" onclick="clearSetupForm()">Clear</button>
+      </div>
+      <div id="setupStatus"></div>
+    </div>
+
+    <div class="panel">
+      <h2>📋 Saved Setups</h2>
+      <div id="setupsList"></div>
+    </div>
+  </div>
+
+  <!-- ============ DESIGN TAB ============ -->
+  <div id="tab-design" class="tab-content hidden">
+    <div class="panel">
+      <h2>🎨 Design Editor</h2>
+
+      <div class="grid-2">
+        <div>
+          <label>Canvas Width (hooks)</label>
+          <input type="number" id="canvasW" value="64" min="1" max="2048">
+        </div>
+        <div>
+          <label>Canvas Height (picks)</label>
+          <input type="number" id="canvasH" value="64" min="1" max="2048">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button onclick="resizeCanvas()">📐 Resize</button>
+        <button class="secondary" onclick="clearCanvas()">🧹 Clear</button>
+        <button class="secondary" onclick="invertCanvas()">🔄 Invert</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>🖌️ Draw</h2>
+      <div class="toolbar">
+        <span style="font-size:13px;color:#94a3b8;">Brush:</span>
+        <div class="color-swatch active" data-color="1" style="background:#fff;"></div>
+        <div class="color-swatch" data-color="0" style="background:#000;"></div>
+        <span style="font-size:12px;color:#64748b;margin-left:8px;">White=Lift · Black=Lower</span>
+      </div>
+      <div id="canvasWrap">
+        <canvas id="designCanvas" width="64" height="64"></canvas>
+      </div>
+      <p class="help">Mouse se draw karo. Click aur drag dono kaam karte hain.</p>
+
+      <label>Ya BMP File Upload Karo</label>
+      <input type="file" id="bmpUpload" accept=".bmp,.png,.jpg,.jpeg" onchange="loadBmpFile(event)">
+      <div class="btn-row">
+        <button class="success" onclick="saveDesignToLocal()">💾 Design Save Karo</button>
+        <button class="secondary" onclick="loadDesignFromLocal()">📂 Load Karo</button>
+      </div>
+      <div id="designStatus"></div>
+    </div>
+  </div>
+
+  <!-- ============ CONVERT TAB ============ -->
+  <div id="tab-convert" class="tab-content hidden">
+    <div class="panel">
+      <h2>🚀 Design → Machine File</h2>
+
+      <label>Machine Setup Select Karo *</label>
+      <select id="convertSetup">
+        <option value="">-- Setup chuno --</option>
+      </select>
+
+      <label>Design Source</label>
+      <div class="btn-row" style="margin-top:6px;">
+        <button class="secondary" id="srcCanvasBtn" onclick="setConvertSource('canvas')">🖌️ Current Canvas Use Karo</button>
+        <button class="secondary" id="srcFileBtn" onclick="setConvertSource('file')">📁 BMP Upload Karo</button>
+      </div>
+      <input type="file" id="convertFile" accept=".bmp,.png,.jpg,.jpeg" onchange="loadConvertFile(event)" class="hidden" style="margin-top:12px;">
+      <div id="convertSourceInfo" class="help">Source: Canvas (default)</div>
+
+      <div class="btn-row">
+        <button class="success" id="convertBtn" onclick="runConversion()">⚡ Convert to Machine File</button>
+      </div>
+
+      <div id="convertStatus"></div>
+      <div id="previewWrap" class="preview-box hidden">
+        <p style="font-size:13px;color:#94a3b8;margin-bottom:8px;">Preview (mapped):</p>
+        <canvas id="previewCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ HELP TAB ============ -->
+  <div id="tab-help" class="tab-content hidden">
+    <div class="panel">
+      <h2>❓ Kaise Use Karein</h2>
+      <ol style="line-height:2; padding-left: 20px; color:#cbd5e1;">
+        <li><b>Setups tab</b> mein jao, machine ka naam, hooks, format daalo → Save.</li>
+        <li><b>Design tab</b> mein canvas pe draw karo, ya BMP upload karo.</li>
+        <li><b>Convert tab</b> mein setup select karo, canvas ya file choose karo → Convert.</li>
+        <li>Download button aa jayega — file machine mein daalo.</li>
+      </ol>
+      <p class="help" style="margin-top:16px;">
+        ⚠️ <b>Note:</b> Yeh basic EP/BMP writer hai. Asli machine formats mein
+        cramming bits, feeder info, aur compression ho sakti hai. Test karke
+        apni machine ke hisaab se tweak karein.
+      </p>
+    </div>
+    <div class="panel">
+      <h2>💡 Color Rules</h2>
+      <p class="help">
+        • <b>White pixel</b> = Hook Lift (solenoid ON)<br>
+        • <b>Black pixel</b> = Hook Lower (solenoid OFF)
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   JACQUARD DESIGNER & CONVERTER — CORE LOGIC
+   ============================================================ */
+
+const LS_SETUPS = 'jacquard_setups_v1';
+const LS_DESIGN = 'jacquard_design_v1';
+let brushColor = 1;
+let isDrawing = false;
+let convertSource = 'canvas';
+let convertImageData = null;
+
+/* ---------------- TAB SWITCHING ---------------- */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.remove('hidden');
+    if (tab.dataset.tab === 'convert') refreshConvertDropdown();
+    if (tab.dataset.tab === 'design') initCanvas();
+  });
+});
+
+/* ---------------- CANVAS ---------------- */
+const canvas = document.getElementById('designCanvas');
+const ctx = canvas.getContext('2d');
+
+function initCanvas() {
+  const w = parseInt(document.getElementById('canvasW').value) || 64;
+  const h = parseInt(document.getElementById('canvasH').value) || 64;
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+    clearCanvas();
+  } else if (canvas.dataset.initialized !== '1') {
+    clearCanvas();
+  }
+  drawCanvas();
+  canvas.dataset.initialized = '1';
+}
+
+function drawCanvas() {
+  const w = canvas.width, h = canvas.height;
+  const imgData = ctx.createImageData(w, h);
+  const d = imgData.data;
+  const state = getCanvasState();
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const val = state[y][x] ? 255 : 0;
+      d[i] = d[i+1] = d[i+2] = val;
+      d[i+3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+let canvasState = [];
+function getCanvasState() {
+  if (!canvasState.length || canvasState.length !== canvas.height ||
+      !canvasState[0] || canvasState[0].length !== canvas.width) {
+    canvasState = Array.from({length: canvas.height}, () =>
+      new Array(canvas.width).fill(0)
+    );
+  }
+  return canvasState;
+}
+
+function setPixel(x, y, val) {
+  const s = getCanvasState();
+  if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
+    s[y][x] = val;
+    drawCanvas();
+  }
+}
+
+function getPixelFromEvent(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = Math.floor((e.clientX - rect.left) * scaleX);
+  const y = Math.floor((e.clientY - rect.top) * scaleY);
+  return { x, y };
+}
+
+canvas.addEventListener('mousedown', e => {
+  isDrawing = true;
+  const { x, y } = getPixelFromEvent(e);
+  setPixel(x, y, brushColor);
+});
+canvas.addEventListener('mousemove', e => {
+  if (!isDrawing) return;
+  const { x, y } = getPixelFromEvent(e);
+  setPixel(x, y, brushColor);
+});
+window.addEventListener('mouseup', () => isDrawing = false);
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  isDrawing = true;
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.floor((t.clientX - rect.left) * canvas.width / rect.width);
+  const y = Math.floor((t.clientY - rect.top) * canvas.height / rect.height);
+  setPixel(x, y, brushColor);
+}, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!isDrawing) return;
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.floor((t.clientX - rect.left) * canvas.width / rect.width);
+  const y = Math.floor((t.clientY - rect.top) * canvas.height / rect.height);
+  setPixel(x, y, brushColor);
+}, { passive: false });
+window.addEventListener('touchend', () => isDrawing = false);
+
+document.querySelectorAll('.color-swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    brushColor = parseInt(sw.dataset.color);
+  });
+});
+
+function resizeCanvas() {
+  canvasState = [];
+  canvas.dataset.initialized = '';
+  initCanvas();
+}
+
+function clearCanvas() {
+  const s = getCanvasState();
+  for (let y = 0; y < canvas.height; y++)
+    for (let x = 0; x < canvas.width; x++) s[y][x] = 0;
+  drawCanvas();
+}
+
+function invertCanvas() {
+  const s = getCanvasState();
+  for (let y = 0; y < canvas.height; y++)
+    for (let x = 0; x < canvas.width; x++) s[y][x] = s[y][x] ? 0 : 1;
+  drawCanvas();
+}
+
+/* ---------------- BMP/IMAGE UPLOAD ---------------- */
+function loadBmpFile(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = () => {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    canvasState = [];
+    document.getElementById('canvasW').value = img.width;
+    document.getElementById('canvasH').value = img.height;
+    const tmp = document.createElement('canvas');
+    tmp.width = img.width; tmp.height = img.height;
+    const tctx = tmp.getContext('2d');
+    tctx.drawImage(img, 0, 0);
+    const data = tctx.getImageData(0, 0, img.width, img.height).data;
+    const s = getCanvasState();
+    for (let y = 0; y < img.height; y++) {
+      for (let x = 0; x < img.width; x++) {
+        const i = (y * img.width + x) * 4;
+        const lum = (data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114);
+        s[y][x] = lum > 128 ? 1 : 0;
+      }
+    }
+    drawCanvas();
+    setDesignStatus('ok', `Loaded: ${img.width}×${img.height}`);
+  };
+  img.onerror = () => setDesignStatus('err', 'Image load nahi hui.');
+  img.src = URL.createObjectURL(file);
+}
+
+/* ---------------- DESIGN SAVE/LOAD ---------------- */
+function saveDesignToLocal() {
+  const s = getCanvasState();
+  const data = { w: canvas.width, h: canvas.height, grid: s };
+  localStorage.setItem(LS_DESIGN, JSON.stringify(data));
+  setDesignStatus('ok', '✅ Design saved to browser storage.');
+}
+
+function loadDesignFromLocal() {
+  const raw = localStorage.getItem(LS_DESIGN);
+  if (!raw) return setDesignStatus('err', 'Koi saved design nahi mila.');
+  const d = JSON.parse(raw);
+  canvas.width = d.w; canvas.height = d.h;
+  document.getElementById('canvasW').value = d.w;
+  document.getElementById('canvasH').value = d.h;
+  canvasState = d.grid;
+  drawCanvas();
+  setDesignStatus('ok', '✅ Design loaded.');
+}
+
+function setDesignStatus(type, msg) {
+  const el = document.getElementById('designStatus');
+  el.innerHTML = `<div class="status ${type}">${msg}</div>`;
+}
+
+/* ---------------- SETUPS (localStorage) ---------------- */
+function getSetups() {
+  try { return JSON.parse(localStorage.getItem(LS_SETUPS) || '[]'); }
+  catch { return []; }
+}
+function setSetups(arr) {
+  localStorage.setItem(LS_SETUPS, JSON.stringify(arr));
+}
+function saveSetup() {
+  const name = document.getElementById('setupName').value.trim();
+  if (!name) return setSetupStatus('err', 'Setup name zaroori hai.');
+
+  const setup = {
+    id: 'setup_' + Date.now(),
+    name,
+    totalHooks: parseInt(document.getElementById('totalHooks').value) || 1344,
+    hooksPerCard: parseInt(document.getElementById('hooksPerCard').value) || 2,
+    outputFormat: document.getElementById('outputFormat').value,
+    feederCount: parseInt(document.getElementById('feederCount').value) || 4,
+    skipHooks: document.getElementById('skipHooks').value.trim(),
+    feederMapping: document.getElementById('feederMapping').value.trim(),
+    createdAt: new Date().toISOString()
+  };
+  const arr = getSetups();
+  arr.push(setup);
+  setSetups(arr);
+  clearSetupForm();
+  renderSetups();
+  setSetupStatus('ok', `✅ Setup "${name}" saved!`);
+}
+
+function clearSetupForm() {
+  document.getElementById('setupName').value = '';
+  document.getElementById('totalHooks').value = 1344;
+  document.getElementById('hooksPerCard').value = 2;
+  document.getElementById('outputFormat').value = 'EP';
+  document.getElementById('feederCount').value = 4;
+  document.getElementById('skipHooks').value = '';
+  document.getElementById('feederMapping').value = '';
+}
+
+function deleteSetup(id) {
+  if (!confirm('Yeh setup delete karna hai?')) return;
+  setSetups(getSetups().filter(s => s.id !== id));
+  renderSetups();
+}
+
+function renderSetups() {
+  const list = document.getElementById('setupsList');
+  const arr = getSetups();
+  if (!arr.length) {
+    list.innerHTML = '<div class="empty">Koi setup save nahi hai. Upar se banao.</div>';
+    return;
+  }
+  list.innerHTML = arr.map(s => `
+    <div class="setup-card">
+      <div class="info">
+        <div class="name">${escapeHtml(s.name)} <span class="badge ${s.outputFormat}">${s.outputFormat}</span></div>
+        <div class="meta">${s.totalHooks} hooks · ${s.hooksPerCard} per card · ${s.feederCount} feeders</div>
+      </div>
+      <button class="danger" onclick="deleteSetup('${s.id}')">Delete</button>
+    </div>
+  `).join('');
+}
+
+function setSetupStatus(type, msg) {
+  document.getElementById('setupStatus').innerHTML =
+    `<div class="status ${type}">${msg}</div>`;
+  setTimeout(() => {
+    const el = document.getElementById('setupStatus');
+    if (el) el.innerHTML = '';
+  }, 4000);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+/* ---------------- CONVERT ---------------- */
+function refreshConvertDropdown() {
+  const sel = document.getElementById('convertSetup');
+  const arr = getSetups();
+  sel.innerHTML = '<option value="">-- Setup chuno --</option>' +
+    arr.map(s => `<option value="${s.id}">${escapeHtml(s.name)} (${s.totalHooks}h · ${s.outputFormat})</option>`).join('');
+}
+
+function setConvertSource(src) {
+  convertSource = src;
+  const info = document.getElementById('convertSourceInfo');
+  const fileInput = document.getElementById('convertFile');
+  if (src === 'canvas') {
+    fileInput.classList.add('hidden');
+    info.textContent = 'Source: Current Canvas';
+  } else {
+    fileInput.classList.remove('hidden');
+    info.textContent = 'Source: BMP File (select karo)';
+  }
+}
+
+function loadConvertFile(ev) {
+  const file = ev.target.files[0];
+  if (!file) { convertImageData = null; return; }
+  const img = new Image();
+  img.onload = () => {
+    const tmp = document.createElement('canvas');
+    tmp.width = img.width; tmp.height = img.height;
+    tmp.getContext('2d').drawImage(img, 0, 0);
+    const data = tmp.getContext('2d').getImageData(0, 0, img.width, img.height).data;
+    const grid = [];
+    for (let y = 0; y < img.height; y++) {
+      const row = [];
+      for (let x = 0; x < img.width; x++) {
+        const i = (y * img.width + x) * 4;
+        const lum = data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114;
+        row.push(lum > 128 ? 1 : 0);
+      }
+      grid.push(row);
+    }
+    convertImageData = { w: img.width, h: img.height, grid };
+    document.getElementById('convertSourceInfo').textContent =
+      `Source: BMP ${img.width}×${img.height} loaded ✅`;
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+function runConversion() {
+  const setupId = document.getElementById('convertSetup').value;
+  if (!setupId) return setConvertStatus('err', 'Pehle setup select karo.');
+  const setup = getSetups().find(s => s.id === setupId);
+  if (!setup) return setConvertStatus('err', 'Setup mila nahi.');
+
+  // Source grid
+  let srcGrid;
+  if (convertSource === 'file') {
+    if (!convertImageData) return setConvertStatus('err', 'BMP file upload karo pehle.');
+    srcGrid = convertImageData.grid;
+  } else {
+    srcGrid = getCanvasState();
+  }
+
+  setConvertStatus('info', '⏳ Converting...');
+
+  try {
+    const mapped = applyHarness(srcGrid, setup);
+    showPreview(mapped);
+    const blob = generateMachineFile(mapped, setup);
+    const fname = `design_${setup.name.replace(/\s+/g,'_')}_${Date.now()}.${setup.outputFormat.toLowerCase()}`;
+    downloadBlob(blob, fname);
+    setConvertStatus('ok',
+      `✅ File ready! ${mapped[0].length} hooks × ${mapped.length} picks → ${fname}`);
+  } catch (err) {
+    console.error(err);
+    setConvertStatus('err', 'Error: ' + err.message);
+  }
+}
+
+function applyHarness(srcGrid, setup) {
+  const totalHooks = setup.totalHooks;
+  const skipSet = new Set(
+    setup.skipHooks.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x))
+  );
+  const srcW = srcGrid[0].length;
+  const mapped = [];
+  for (let y = 0; y < srcGrid.length; y++) {
+    const row = new Array(totalHooks).fill(0);
+    for (let x = 0; x < totalHooks; x++) {
+      if (skipSet.has(x)) { row[x] = 0; continue; }
+      row[x] = x < srcW ? srcGrid[y][x] : 0;
+    }
+    mapped.push(row);
+  }
+  return mapped;
+}
+
+function showPreview(grid) {
+  const wrap = document.getElementById('previewWrap');
+  const pc = document.getElementById('previewCanvas');
+  wrap.classList.remove('hidden');
+  const w = grid[0].length, h = grid.length;
+  pc.width = w; pc.height = h;
+  const pctx = pc.getContext('2d');
+  const img = pctx.createImageData(w, h);
+  const d = img.data;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const v = grid[y][x] ? 255 : 0;
+      d[i] = d[i+1] = d[i+2] = v; d[i+3] = 255;
+    }
+  }
+  pctx.putImageData(img, 0, 0);
+}
+
+/* ---------------- MACHINE FILE GENERATION ---------------- */
+function generateMachineFile(grid, setup) {
+  const format = (setup.outputFormat || 'EP').toUpperCase();
+  if (format === 'EP') return generateEP(grid, setup);
+  if (format === 'JC5') return generateJC5(grid, setup);
+  return generateEP(grid, setup);
+}
+
+/*
+  BASIC BONAS EP WRITER
+  Structure (reverse-engineered, simplified):
+    [0..1]   Version (uint16 LE)
+    [2]      Reserved
+    [3..4]   Height in picks (uint16 LE)
+    [5]      Reserved
+    [6..19]  Filename (14 bytes ASCII, null padded)
+    [20..21] Reserved
+    [22..23] Width in hooks (uint16 LE)
+    [34..]   Design data, bit-packed (8 hooks per byte, MSB first)
+  Ye basic format hai — real machine ke liye verify karein.
+*/
+function generateEP(grid, setup) {
+  const h = grid.length;
+  const w = grid[0].length;
+  const headerSize = 34;
+  const bytesPerRow = Math.ceil(w / 8);
+  const buf = new Uint8Array(headerSize + bytesPerRow * h);
+  const dv = new DataView(buf.buffer);
+
+  dv.setUint16(0, 0x0001, true);           // version
+  dv.setUint16(3, h, true);                // height
+  const fname = (setup.name || 'design').slice(0, 14);
+  for (let i = 0; i < 14; i++) {
+    buf[6 + i] = i < fname.length ? fname.charCodeAt(i) : 0;
+  }
+  dv.setUint16(22, w, true);               // width
+
+  // Design data — bit-packed rows
+  let off = headerSize;
+  for (let y = 0; y < h; y++) {
+    for (let b = 0; b < bytesPerRow; b++) {
+      let byte = 0;
+      for (let bit = 0; bit < 8; bit++) {
+        const x = b * 8 + bit;
+        if (x < w && grid[y][x]) byte |= (1 << (7 - bit));
+      }
+      buf[off++] = byte;
+    }
+  }
+  return new Blob([buf], { type: 'application/octet-stream' });
+}
+
+/*
+  BASIC JC5 WRITER (simplified)
+  JC5 header starts with "JC5" magic-ish marker + dimensions,
+  phir design data compressed form mein. Yeh basic structure hai:
+    [0..3]   "JC5\x00"
+    [4..5]   Width (uint16 LE)
+    [6..7]   Height (uint16 LE)
+    [8..11]  Reserved
+    [12..]   Design data bit-packed
+  ⚠️ Asli JC5 format proprietary hai — machine manual check karein.
+*/
+function generateJC5(grid, setup) {
+  const h = grid.length;
+  const w = grid[0].length;
+  const headerSize = 12;
+  const bytesPerRow = Math.ceil(w / 8);
+  const buf = new Uint8Array(headerSize + bytesPerRow * h);
+  const dv = new DataView(buf.buffer);
+
+  buf[0] = 0x4A; buf[1] = 0x43; buf[2] = 0x35; buf[3] = 0x00; // "JC5\0"
+  dv.setUint16(4, w, true);
+  dv.setUint16(6, h, true);
+
+  let off = headerSize;
+  for (let y = 0; y < h; y++) {
+    for (let b = 0; b < bytesPerRow; b++) {
+      let byte = 0;
+      for (let bit = 0; bit < 8; bit++) {
+        const x = b * 8 + bit;
+        if (x < w && grid[y][x]) byte |= (1 << (7 - bit));
+      }
+      buf[off++] = byte;
+    }
+  }
+  return new Blob([buf], { type: 'application/octet-stream' });
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function setConvertStatus(type, msg) {
+  document.getElementById('convertStatus').innerHTML =
+    `<div class="status ${type}">${msg}</div>`;
+}
+
+/* ---------------- INIT ---------------- */
+window.addEventListener('load', () => {
+  renderSetups();
+  initCanvas();
+  refreshConvertDropdown();
+});
+</script>
+</body>
+</html>
